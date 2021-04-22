@@ -40,7 +40,7 @@ impl TreeEntry {
   }
 
   pub fn update(&mut self) {
-    if self.expanded && self.children.is_empty() {
+    if self.expanded {
       self.read_fs()
     }
     for child in &mut self.children {
@@ -52,7 +52,10 @@ impl TreeEntry {
     self.children = std::fs::read_dir(&self.path)
       .map(|paths| {
         paths
-          .filter_map(|p| p.map(|p| p.path()).map(TreeEntry::new).ok())
+          .filter_map(|p| p.map(|p| p.path()).map(|p| {
+            self.children.iter().position(|e| e.path == p)
+              .map(|i| self.children.remove(i)).unwrap_or_else(|| TreeEntry::new(p))
+          }).ok())
           .collect()
       })
       .unwrap_or(vec![]);

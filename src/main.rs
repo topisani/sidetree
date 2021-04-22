@@ -8,7 +8,6 @@ use crate::file_tree::{FileTree, FileTreeState};
 use crate::prompt::InfoBox;
 use crate::prompt::Prompt;
 use crate::prompt::StatusLine;
-use crate::prompt::StatusLineWidget;
 use crate::tree_entry::*;
 use std::process::Command;
 
@@ -48,7 +47,7 @@ impl App {
       .split(f.size());
 
     f.render_stateful_widget(FileTree::new(), chunks[0], &mut self.tree);
-    f.render_stateful_widget(StatusLineWidget {}, chunks[1], &mut self.statusline);
+    self.statusline.draw(f, chunks[1]);
   }
 
   pub fn update(&mut self) {
@@ -58,6 +57,7 @@ impl App {
   pub fn on_key(&mut self, k: Key) -> Option<()> {
     if self.statusline.has_focus() {
       self.statusline.on_key(k);
+      self.tree.update();
       return Some(());
     }
     match k {
@@ -102,7 +102,11 @@ impl App {
           }
         };
       }
-      Key::Char('!') => self.statusline.prompt(Box::new(ShellPrompt {})),
+      Key::Char('!') => {
+        if let Some(entry) = self.tree.entry() {
+          self.statusline.prompt(Box::new(ShellPrompt { path: entry.path.clone() }));
+        }
+      }
       _ => {}
     }
     self.tree.update();
@@ -151,14 +155,31 @@ pub fn run_shell(info: &mut InfoBox, cmd: String) {
   }
 }
 
-pub struct ShellPrompt {}
+pub struct ShellPrompt {
+  path: PathBuf,
+}
 
 impl Prompt for ShellPrompt {
   fn prompt_text(&self) -> &str {
     "!"
   }
   fn on_submit(&mut self, info: &mut InfoBox, text: &str) {
-    run_shell(info, text.to_string());
+    let output = Command::new("sh")
+      .arg("-c")
+      .arg(text)
+      .arg("--")
+      .arg(self.path.to_str().unwrap_or(""))
+      .output();
+    match output {
+      Err(err) => {
+        info.error(&err.to_string());
+      }
+      Ok(output) => {
+        if !output.status.success() {
+          info.error(format!("Command failed with exit code {}", output.status).as_str())
+        }
+      }
+    }
   }
   fn on_cancel(&mut self, _: &mut InfoBox) {}
 }
