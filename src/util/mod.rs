@@ -46,10 +46,13 @@ impl<T> StatefulList<T> {
     self.state.select(None);
   }
 
+  pub fn index(&self) -> Option<usize> {
+    self.state.selected()
+  }
+
   pub fn selected(&mut self) -> Option<&mut T> {
     self
-      .state
-      .selected()
+      .index()
       .and_then(move |i| self.items.get_mut(i))
   }
 }

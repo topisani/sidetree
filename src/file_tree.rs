@@ -18,10 +18,13 @@ pub struct FileTreeState {
 
 impl FileTreeState {
   pub fn new(path: PathBuf) -> FileTreeState {
-    FileTreeState {
+    let mut res = FileTreeState {
       root_entry: TreeEntry::new(path),
       lines: StatefulList::new(),
-    }
+    };
+    res.update();
+    res.lines.state.select(Some(0));
+    res
   }
 
   /// Rescan the file system and rebuild the list
@@ -36,6 +39,18 @@ impl FileTreeState {
   }
   pub fn select_prev(&mut self) {
     self.lines.previous()
+  }
+
+  /// Select the next entry up 
+  pub fn select_up(&mut self) -> Option<()> {
+    let level = self.lines.selected()?.level;
+    while self.lines.index()? != 0 {
+      self.select_prev();
+      if self.lines.selected()?.level < level {
+        break;
+      }
+    }
+    Some(())
   }
 
   /// Currently selected entry

@@ -8,6 +8,8 @@ pub struct TreeEntry {
   pub children: Vec<TreeEntry>,
 }
 
+/// A line in the FileTree widget.
+/// Identified by `path` which is used to locate the matching 
 pub struct TreeEntryLine {
   pub path: PathBuf,
   pub line: String,
@@ -27,6 +29,14 @@ impl TreeEntry {
 
   pub fn toggle_expanded(&mut self) {
     self.expanded = !self.expanded;
+  }
+  
+  pub fn collapse(&mut self) {
+    self.expanded = false;
+  }
+  
+  pub fn expand(&mut self) {
+    self.expanded = true;
   }
 
   pub fn update(&mut self) {

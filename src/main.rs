@@ -3,6 +3,7 @@ mod file_tree;
 mod tree_entry;
 mod util;
 
+use std::process::Command;
 use crate::file_tree::{FileTree, FileTreeState};
 use crate::tree_entry::*;
 
@@ -33,7 +34,6 @@ impl App {
       exit: false,
     }
   }
-  
   pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>) {
     let chunks = Layout::default()
       .direction(Direction::Vertical)
@@ -44,7 +44,7 @@ impl App {
   }
 
   pub fn update(&mut self) {
-    self.tree.update(); 
+    self.tree.update();
   }
 
   pub fn on_key(&mut self, k: Key) -> Option<()> {
@@ -58,8 +58,34 @@ impl App {
       Key::Char('k') => {
         self.tree.select_prev();
       }
-      Key::Char('l') | Key::Char('\n') => {
-        self.tree.entry()?.toggle_expanded();
+      Key::Char('\n') => {
+        if let Some(entry) = self.tree.entry() {
+          if entry.is_dir {
+            entry.toggle_expanded();
+          } else {
+            Command::new("sh").arg("-c").arg(format!("kcr edit {}", entry.path.to_str().unwrap())).output().expect("Failed to run");
+          }
+        }
+      }
+      Key::Char('l') => {
+        if let Some(entry) = self.tree.entry() {
+          if entry.is_dir {
+            if !entry.expanded {
+              entry.expand();
+            } else {
+              self.tree.select_next();
+            }
+          }
+        };
+      }
+      Key::Char('h') => {
+        if let Some(entry) = self.tree.entry() {
+          if entry.expanded {
+            entry.collapse();
+          } else {
+            self.tree.select_up();
+          }
+        };
       }
       _ => {}
     }
@@ -78,7 +104,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
   let events = Events::new();
   let mut app = App::new();
-  app.update();
   loop {
     if app.exit {
       break;
