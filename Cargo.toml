@@ -10,3 +10,5 @@ edition = "2018"
 tui = "0.14"
 termion = "1.5"
 unicode-width = "0.1.5"
+serde = { version = "1.0", features = ["derive"] }
+combine = "4.5.2"

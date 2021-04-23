@@ -110,6 +110,20 @@ impl TreeEntry {
   }
 
   /// Find the tree entry corresponding to a `TreeEntryLine`
+  pub fn find(&self, e: &TreeEntryLine) -> Option<&TreeEntry> {
+    if e.path == self.path {
+      return Some(self);
+    }
+    for child in &self.children {
+      let res = child.find(e);
+      if res.is_some() {
+        return res;
+      }
+    }
+    return None;
+  }
+  
+  /// Find the tree entry corresponding to a `TreeEntryLine`
   pub fn find_mut(&mut self, e: &TreeEntryLine) -> Option<&mut TreeEntry> {
     if e.path == self.path {
       return Some(self);

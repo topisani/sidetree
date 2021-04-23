@@ -50,7 +50,12 @@ impl<T> StatefulList<T> {
     self.state.selected()
   }
 
-  pub fn selected(&mut self) -> Option<&mut T> {
+  pub fn selected(&self) -> Option<&T> {
+    self
+      .index()
+      .and_then(move |i| self.items.get(i))
+  }
+  pub fn selected_mut(&mut self) -> Option<&mut T> {
     self
       .index()
       .and_then(move |i| self.items.get_mut(i))

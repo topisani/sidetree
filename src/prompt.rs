@@ -1,22 +1,17 @@
-use std::path::Path;
-use std::path::PathBuf;
+use crate::commands::CommandQueue;
 use termion::event::Key;
 use tui::backend::Backend;
-use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::text::Span;
 use tui::text::Spans;
-use tui::text::Text;
 use tui::widgets::Paragraph;
-use tui::widgets::StatefulWidget;
-use tui::widgets::Widget;
 use tui::Frame;
 use unicode_width::UnicodeWidthStr;
 
 pub trait Prompt {
   fn prompt_text(&self) -> &str;
-  fn on_submit(&mut self, info: &mut InfoBox, input: &str);
-  fn on_cancel(&mut self, info: &mut InfoBox);
+  fn on_submit(&mut self, cmds: &mut CommandQueue, input: &str);
+  fn on_cancel(&mut self, cmds: &mut CommandQueue);
 }
 
 struct PromptState {
@@ -32,10 +27,10 @@ impl PromptState {
     }
   }
   /// Returns true if the prompt should be exited
-  pub fn on_key(&mut self, info: &mut InfoBox, key: Key) -> bool {
+  pub fn on_key(&mut self, cmds: &mut CommandQueue, key: Key) -> bool {
     match key {
       Key::Char('\n') => {
-        self.submit(info);
+        self.submit(cmds);
         true
       }
       Key::Char(c) => {
@@ -47,19 +42,19 @@ impl PromptState {
         false
       }
       Key::Esc => {
-        self.cancel(info);
+        self.cancel(cmds);
         true
       }
       _ => false,
     }
   }
 
-  pub fn submit(&mut self, info: &mut InfoBox) {
-    self.prompt.on_submit(info, self.input.as_str());
+  pub fn submit(&mut self, cmds: &mut CommandQueue) {
+    self.prompt.on_submit(cmds, self.input.as_str());
     self.input.clear();
   }
-  pub fn cancel(&mut self, info: &mut InfoBox) {
-    self.prompt.on_cancel(info);
+  pub fn cancel(&mut self, cmds: &mut CommandQueue) {
+    self.prompt.on_cancel(cmds);
     self.input.clear();
   }
 
@@ -115,9 +110,9 @@ impl StatusLine {
 
   /// Handle a key
   /// Return true if the tree should be updated
-  pub fn on_key(&mut self, key: Key) -> bool {
+  pub fn on_key(&mut self, cmds: &mut CommandQueue, key: Key) -> bool {
     if let Some(p) = &mut self.prompt_state {
-      if p.on_key(&mut self.info, key) {
+      if p.on_key(cmds, key) {
         self.prompt_state = None;
         return true;
       }

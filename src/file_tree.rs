@@ -54,8 +54,26 @@ impl FileTreeState {
   }
 
   /// Currently selected entry
-  pub fn entry(&mut self) -> Option<&mut TreeEntry> {
-    self.root_entry.find_mut(self.lines.selected()?)
+  pub fn entry(&self) -> &TreeEntry {
+    self
+      .lines
+      .selected()
+      .and_then(|x| self.root_entry.find(x))
+      .unwrap_or(&self.root_entry)
+  }
+  
+  /// Currently selected entry
+  pub fn entry_mut(&mut self) -> &mut TreeEntry {
+    let root = &mut self.root_entry;
+    if let Some(line) = self.lines.selected_mut() {
+      if let Some(entry) = root.find_mut(line) {
+        return entry;
+      } else {
+        panic!()
+      }
+    } else {
+      return root
+    }
   }
 
   /// Rebuild the list from the file tree.
