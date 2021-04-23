@@ -41,7 +41,7 @@ impl FileTreeState {
     self.lines.previous()
   }
 
-  /// Select the next entry up 
+  /// Select the next entry up
   pub fn select_up(&mut self) -> Option<()> {
     let level = self.lines.selected()?.level;
     while self.lines.index()? != 0 {

@@ -1,4 +1,3 @@
-#![feature(try_trait)]
 use std::path::PathBuf;
 
 pub struct TreeEntry {
@@ -9,7 +8,7 @@ pub struct TreeEntry {
 }
 
 /// A line in the FileTree widget.
-/// Identified by `path` which is used to locate the matching 
+/// Identified by `path` which is used to locate the matching
 pub struct TreeEntryLine {
   pub path: PathBuf,
   pub line: String,
@@ -18,6 +17,7 @@ pub struct TreeEntryLine {
 
 impl TreeEntry {
   pub fn new(path: PathBuf) -> TreeEntry {
+    let path = std::fs::canonicalize(path.as_path()).unwrap_or(path);
     let md = path.metadata();
     TreeEntry {
       path: path,
@@ -30,11 +30,9 @@ impl TreeEntry {
   pub fn toggle_expanded(&mut self) {
     self.expanded = !self.expanded;
   }
-  
   pub fn collapse(&mut self) {
     self.expanded = false;
   }
-  
   pub fn expand(&mut self) {
     self.expanded = true;
   }
@@ -52,10 +50,18 @@ impl TreeEntry {
     self.children = std::fs::read_dir(&self.path)
       .map(|paths| {
         paths
-          .filter_map(|p| p.map(|p| p.path()).map(|p| {
-            self.children.iter().position(|e| e.path == p)
-              .map(|i| self.children.remove(i)).unwrap_or_else(|| TreeEntry::new(p))
-          }).ok())
+          .filter_map(|p| {
+            p.map(|p| p.path())
+              .map(|p| {
+                self
+                  .children
+                  .iter()
+                  .position(|e| e.path == p)
+                  .map(|i| self.children.remove(i))
+                  .unwrap_or_else(|| TreeEntry::new(p))
+              })
+              .ok()
+          })
           .collect()
       })
       .unwrap_or(vec![]);
@@ -63,28 +69,24 @@ impl TreeEntry {
     self.children.sort_by(|a, b| b.is_dir.cmp(&a.is_dir));
   }
   pub fn build_line(&self, level: usize) -> Option<TreeEntryLine> {
-    self
-      .path
-      .file_name()
-      .and_then(|s| s.to_str())
-      .and_then(|name| {
-        let prefix = {
-          if self.is_dir {
-            if self.expanded {
-              "▾ 🗁 "
-            } else {
-              "▸ 🗀 "
-            }
+    self.path.file_name().and_then(|s| s.to_str()).map(|name| {
+      let prefix = {
+        if self.is_dir {
+          if self.expanded {
+            "▾ 🗁 "
           } else {
-            "  🖺 "
+            "▸ 🗀 "
           }
-        };
-        Some(TreeEntryLine {
-          path: self.path.clone(),
-          line: format!("{} {}", prefix, name),
-          level,
-        })
-      })
+        } else {
+          "  🖺 "
+        }
+      };
+      TreeEntryLine {
+        path: self.path.clone(),
+        line: format!("{} {}", prefix, name),
+        level,
+      }
+    })
   }
 
   pub fn build_lines_rec<'a>(

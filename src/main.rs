@@ -1,3 +1,4 @@
+#![feature(try_trait)]
 mod commands;
 mod file_tree;
 mod prompt;
@@ -77,7 +78,7 @@ impl App {
           } else {
             run_shell(
               &mut self.statusline.info,
-              format!("kcr edit '{}'", entry.path.to_str().unwrap()),
+              format!("kcr edit '{}'; kcr send focus", entry.path.to_str().unwrap()),
             )
           }
         }
