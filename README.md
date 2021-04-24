@@ -12,3 +12,12 @@ map -docstring 'sidetree' global user <tab> ': sidetree<ret>'
 ```
 
 Currently requires [kcr](https://github.com/alexherbo2/kakoune.cr)
+
+## Configuration
+
+Commands can be placed in `~/.config/sidetree/sidetreerc`, one command per line:
+```
+set show_hidden false
+set quit_on_open false
+set open_cmd 'kcr edit "$sidetree_entry"; kcr focus'
+```

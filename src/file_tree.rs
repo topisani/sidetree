@@ -1,3 +1,5 @@
+use crate::App;
+use crate::commands::Config;
 use crate::util::StatefulList;
 use crate::TreeEntry;
 use crate::TreeEntryLine;
@@ -22,16 +24,15 @@ impl FileTreeState {
       root_entry: TreeEntry::new(path),
       lines: StatefulList::new(),
     };
-    res.update();
     res.lines.state.select(Some(0));
     res
   }
 
   /// Rescan the file system and rebuild the list
-  pub fn update(&mut self) {
+  pub fn update(&mut self, cfg: &Config) {
     self.root_entry.expanded = true;
     self.root_entry.update();
-    self.rebuild_list();
+    self.rebuild_list(cfg);
   }
 
   pub fn select_next(&mut self) {
@@ -78,8 +79,8 @@ impl FileTreeState {
 
   /// Rebuild the list from the file tree.
   /// Does not rescan the filesystem
-  fn rebuild_list(&mut self) {
-    self.lines.items = self.root_entry.build_lines_rec(0).collect();
+  fn rebuild_list(&mut self, cfg: &Config) {
+    self.lines.items = self.root_entry.build_lines_rec(cfg, 0).collect();
   }
 }
 

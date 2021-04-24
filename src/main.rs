@@ -13,7 +13,9 @@ use crate::file_tree::{FileTree, FileTreeState};
 use crate::prompt::Prompt;
 use crate::prompt::StatusLine;
 use crate::tree_entry::*;
+use std::fs::File;
 
+use clap::Clap;
 use std::error::Error;
 use std::io;
 use std::path::PathBuf;
@@ -41,7 +43,7 @@ impl App {
   }
 
   pub fn update(&mut self) {
-    self.tree.update();
+    self.tree.update(&self.config);
   }
 
   pub fn tick(&mut self) {
@@ -51,7 +53,7 @@ impl App {
   pub fn on_key(&mut self, k: Key) -> Option<()> {
     if self.statusline.has_focus() {
       self.statusline.on_key(&mut self.queued_commands, k);
-      self.tree.update();
+      self.tree.update(&self.config);
       return Some(());
     }
     match k {
@@ -98,12 +100,38 @@ impl App {
       }
       _ => {}
     }
-    self.tree.update();
+    self.tree.update(&self.config);
     Some(())
   }
 }
 
+/// This doc string acts as a help message when the user runs '--help'
+/// as do all doc strings on fields
+#[derive(Clap)]
+#[clap(
+  version = "0.1.0",
+  author = "Tobias Pisani <topisani@hamsterpoison.com>"
+)]
+struct Opts {
+  /// Sets a custom config file. Could have been an Option<T> with no default too
+  #[clap(short, long)]
+  config: Option<String>,
+}
+
+fn default_conf_file() -> String {
+  let xdg = xdg::BaseDirectories::with_prefix("sidetree").unwrap();
+  let conf_file = xdg
+    .place_config_file("sidetreerc")
+    .expect("Cannot create config directory");
+  if !conf_file.exists() {
+    File::create(&conf_file).expect("Cannot create config file");
+  }
+  conf_file.to_str().map(|s| s.to_string()).unwrap()
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
+  let opts = Opts::parse();
+
   // Terminal initialization
   let stdout = io::stdout().into_raw_mode()?;
   let stdout = MouseTerminal::from(stdout);
@@ -113,6 +141,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
   let mut events = Events::new();
   let mut app = App::new();
+  let conf_file = opts.config.unwrap_or_else(default_conf_file);
+  commands::run_config_file(&mut app, conf_file.as_str())?;
   loop {
     terminal.draw(|f| {
       app.draw(f);

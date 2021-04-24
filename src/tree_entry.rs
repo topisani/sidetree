@@ -1,3 +1,4 @@
+use crate::commands::Config;
 use std::path::PathBuf;
 
 pub struct TreeEntry {
@@ -68,7 +69,25 @@ impl TreeEntry {
     self.children.sort_by(|a, b| a.path.cmp(&b.path));
     self.children.sort_by(|a, b| b.is_dir.cmp(&a.is_dir));
   }
-  pub fn build_line(&self, level: usize) -> Option<TreeEntryLine> {
+
+  fn should_show_item(&self, conf: &Config, level: usize) -> bool {
+    if !conf.show_hidden
+      && self
+        .path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .map(|x| x.starts_with("."))
+        .unwrap_or(false)
+    {
+      return false;
+    }
+    return true;
+  }
+
+  pub fn build_line(&self, conf: &Config, level: usize) -> Option<TreeEntryLine> {
+    if !self.should_show_item(conf, level) {
+      return None;
+    }
     self.path.file_name().and_then(|s| s.to_str()).map(|name| {
       let prefix = {
         if self.is_dir {
@@ -91,16 +110,17 @@ impl TreeEntry {
 
   pub fn build_lines_rec<'a>(
     &'a self,
+    conf: &'a Config,
     level: usize,
   ) -> Box<dyn Iterator<Item = TreeEntryLine> + 'a> {
-    let self_line = std::iter::once(self).filter_map(move |s| s.build_line(level));
+    let self_line = std::iter::once(self).filter_map(move |s| s.build_line(conf, level));
     if self.expanded {
       Box::new(
         self_line.chain(
           self
             .children
             .iter()
-            .map(move |n| n.build_lines_rec(level + 1))
+            .map(move |n| n.build_lines_rec(conf, level + 1))
             .flatten(),
         ),
       )
@@ -122,7 +142,6 @@ impl TreeEntry {
     }
     return None;
   }
-  
   /// Find the tree entry corresponding to a `TreeEntryLine`
   pub fn find_mut(&mut self, e: &TreeEntryLine) -> Option<&mut TreeEntry> {
     if e.path == self.path {
