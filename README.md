@@ -21,3 +21,17 @@ set show_hidden false
 set quit_on_open false
 set open_cmd 'kcr edit "$sidetree_entry"; kcr focus'
 ```
+
+TODO
+----
+
+ - [ ] Proper symlink support
+ - [ ] Custom key maps, `map` command
+ - [ ] Better script parsing
+   - [ ] Comments
+   - [ ] Blocks
+ - [ ] Custom formatting
+ - [ ] Git integration
+   - [ ] Gitignore
+   - [ ] Git status
+ - [ ] File icons by extension
