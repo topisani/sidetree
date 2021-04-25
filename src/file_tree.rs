@@ -28,6 +28,11 @@ impl FileTreeState {
     res
   }
 
+  pub fn change_root(&mut self, cfg: &Config, path: PathBuf) {
+    self.root_entry = TreeEntry::new(path);
+    self.update(cfg);
+  }
+
   /// Rescan the file system and rebuild the list
   pub fn update(&mut self, cfg: &Config) {
     self.root_entry.expanded = true;

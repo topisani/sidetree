@@ -25,8 +25,9 @@ set open_cmd 'kcr edit "$sidetree_entry"; kcr focus'
 TODO
 ----
 
- - [ ] Proper symlink support
- - [ ] Custom key maps, `map` command
+ - [ ] Proper symlink handling
+ - [x] Custom key maps, `map` command
+ - [ ] Custom commands and aliases
  - [ ] Better script parsing
    - [ ] Comments
    - [ ] Blocks
@@ -35,3 +36,4 @@ TODO
    - [ ] Gitignore
    - [ ] Git status
  - [ ] File icons by extension
+ - [ ] Better prompt keybinds and cursor movements 

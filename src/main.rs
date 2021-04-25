@@ -5,6 +5,7 @@ mod file_tree;
 mod prompt;
 mod tree_entry;
 mod util;
+mod keymap;
 
 use crate::commands::App;
 use crate::commands::Command;
@@ -56,6 +57,10 @@ impl App {
       self.tree.update(&self.config);
       return Some(());
     }
+    if let Some(cmd) = self.keymap.get_mapping(k) {
+      self.run_command(cmd);
+      return Some(());
+    }
     match k {
       Key::Char('q') => {
         self.exit = true;
@@ -97,6 +102,9 @@ impl App {
       }
       Key::Char(':') => {
         self.statusline.prompt(Box::new(CmdPrompt {}));
+      }
+      Key::Alt('l') => {
+        self.run_command(commands::Command::Cd(None));
       }
       _ => {}
     }

@@ -1,4 +1,7 @@
+use crate::keymap::parse_key;
+use crate::keymap::KeyMap;
 use serde::{Deserialize, Serialize};
+use termion::event::Key;
 
 use crate::FileTreeState;
 use crate::PathBuf;
@@ -54,6 +57,7 @@ pub struct App {
   pub exit: bool,
   pub statusline: StatusLine,
   pub queued_commands: CommandQueue,
+  pub keymap: KeyMap,
 }
 
 impl App {
@@ -64,6 +68,7 @@ impl App {
       exit: false,
       statusline: StatusLine::new(),
       queued_commands: CommandQueue::new(),
+      keymap: KeyMap::new(),
     };
     res.tree.update(&res.config);
     res
@@ -76,6 +81,7 @@ impl App {
   }
 }
 
+#[derive(Debug, Clone)]
 pub enum Command {
   Quit,
   Shell(String, Vec<String>),
@@ -83,37 +89,11 @@ pub enum Command {
   CmdStr(String),
   Echo(String),
   Set(String, String),
+  Cd(Option<PathBuf>),
+  MapKey(Key, Box<Command>),
 }
 
 impl App {
-  fn error(&mut self, msg: &str) {
-    self.statusline.info.error(msg)
-  }
-
-  fn parse_opt<T: std::str::FromStr>(&mut self, val: String) -> Option<T> {
-    if let Ok(val) = val.parse::<T>() {
-      Some(val)
-    } else {
-      self.error("Could not parse option value");
-      None
-    }
-  }
-
-  fn set_opt(&mut self, opt: String, val: String) {
-    match opt.as_str() {
-      "open_cmd" => self.config.open_cmd = val,
-      "show_hidden" => {
-        self.parse_opt::<bool>(val).map(|x| self.config.show_hidden = x);
-      }
-      "quit_on_open" => {
-        self.parse_opt::<bool>(val).map(|x| self.config.quit_on_open = x);
-      }
-      _ => self.error(format!("unknown option {}", opt).as_str()),
-    }
-  }
-  fn quit(&mut self) {
-    self.exit = true;
-  }
   pub fn run_command(&mut self, cmd: Command) {
     use Command::*;
     match cmd {
@@ -140,8 +120,53 @@ impl App {
       Echo(msg) => {
         self.statusline.info.info(msg.as_str());
       }
+      Cd(path) => {
+        let path = path.as_ref().unwrap_or_else(|| &self.tree.entry().path);
+        let path = path.clone();
+        match std::env::set_current_dir(path.as_path()) {
+          Ok(()) => self
+            .tree
+            .change_root(&self.config, std::env::current_dir().unwrap()),
+          Err(err) => self.error(err.to_string().as_str()),
+        }
+      }
+      MapKey(key, cmd) => {
+        self.keymap.add_mapping(key, *cmd);
+      }
     }
     self.tree.update(&self.config);
+  }
+  fn error(&mut self, msg: &str) {
+    self.statusline.info.error(msg)
+  }
+
+  fn parse_opt<T: std::str::FromStr>(&mut self, val: String) -> Option<T> {
+    if let Ok(val) = val.parse::<T>() {
+      Some(val)
+    } else {
+      self.error("Could not parse option value");
+      None
+    }
+  }
+
+  fn set_opt(&mut self, opt: String, val: String) {
+    match opt.as_str() {
+      "open_cmd" => self.config.open_cmd = val,
+      "show_hidden" => {
+        self
+          .parse_opt::<bool>(val)
+          .map(|x| self.config.show_hidden = x);
+      }
+      "quit_on_open" => {
+        self
+          .parse_opt::<bool>(val)
+          .map(|x| self.config.quit_on_open = x);
+      }
+      _ => self.error(format!("unknown option {}", opt).as_str()),
+    }
+  }
+  fn quit(&mut self) {
+    self.exit = true;
   }
 }
 
@@ -152,6 +177,11 @@ pub fn build_cmd(cmd: String, args: Vec<String>) -> Result<Command, String> {
     "set" => Ok(Command::Set(args[0].clone(), args[1].clone())),
     "echo" => Ok(Command::Echo(args.join(" "))),
     "shell" => Ok(Command::Shell(args.join(" "), vec![])),
+    "cd" => Ok(Command::Cd(args.get(0).map(PathBuf::from))),
+    "map" => Ok(Command::MapKey(
+      parse_key(args[0].as_str()).map_err(|_| "could not parse key")?,
+      Box::new(build_cmd(args[1].clone(), args[2..].to_vec())?),
+    )),
     _ => Err(format!("unknown command {}", cmd)),
   }
 }

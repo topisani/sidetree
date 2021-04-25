@@ -85,6 +85,9 @@ impl InfoBox {
   pub fn error(&mut self, msg: &str) {
     self.info_msg = String::from(msg);
   }
+  pub fn clear(&mut self) {
+    self.info_msg.clear();
+  }
 }
 
 pub struct StatusLine {
@@ -121,6 +124,7 @@ impl StatusLine {
   }
 
   pub fn prompt(&mut self, prompt: Box<dyn Prompt>) {
+    self.info.clear();
     self.prompt_state = Some(PromptState::new(prompt));
   }
 
