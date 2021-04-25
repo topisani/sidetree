@@ -1,8 +1,11 @@
 [package]
 name = "sidetree"
 version = "0.1.0"
-authors = ["topisani <topisani@hamsterpoison.com>"]
+authors = ["Tobias Pisani <topisani@hamsterpoison.com>"]
 edition = "2018"
+description = "TUI file tree for usage with terminal text editors"
+license = "MIT"
+homepage = "https://github.com/topisani/sidetree"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
