@@ -1,6 +1,14 @@
 # A TUI File tree panel
 ![image](https://user-images.githubusercontent.com/3133596/115800615-4f633880-a3db-11eb-9b08-7509b6c0ec3c.png)
 
+## Installation
+
+Any system with `cargo` installed, can simply get sidetree by running
+```
+cargo install sidetree
+```
+
+## Example integration
 
 Very simple integration with [kakoune](https://github.com/mawww/kakoune) in tmux:
 

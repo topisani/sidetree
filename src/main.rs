@@ -26,15 +26,14 @@ use tui::Terminal;
 
 use crate::util::event::{Event, Events};
 
-/// This doc string acts as a help message when the user runs '--help'
-/// as do all doc strings on fields
 #[derive(Clap)]
 #[clap(
-  version = "0.1.0",
-  author = "Tobias Pisani <topisani@hamsterpoison.com>"
+  version = env!("CARGO_PKG_VERSION"),
+  author = env!("CARGO_PKG_AUTHORS"),
 )]
+/// An interactive file tree meant to be used as a side panel for terminal text editors
 struct Opts {
-  /// Sets a custom config file. Could have been an Option<T> with no default too
+  /// Set a config file to use. By default uses $XDG_CONFIG_DIR/sidetree/sidetreerc
   #[clap(short, long)]
   config: Option<String>,
 }
