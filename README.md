@@ -20,12 +20,15 @@ Commands can be placed in `~/.config/sidetree/sidetreerc`, one command per line:
 set show_hidden false
 set quit_on_open false
 set open_cmd 'kcr edit "$sidetree_entry"; kcr focus'
+map <esc> quit
+map u cd ..
+map <c-ret> cd
 ```
 
 TODO
 ----
 
- - [ ] Proper symlink handling
+ - [x] Proper symlink handling
  - [x] Custom key maps, `map` command
  - [ ] Custom commands and aliases
  - [ ] Better script parsing

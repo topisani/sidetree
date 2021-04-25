@@ -1,5 +1,6 @@
 use crate::commands::Config;
 use std::path::PathBuf;
+use path_absolutize::*;
 
 pub struct TreeEntry {
   pub path: PathBuf,
@@ -18,7 +19,7 @@ pub struct TreeEntryLine {
 
 impl TreeEntry {
   pub fn new(path: PathBuf) -> TreeEntry {
-    let path = std::fs::canonicalize(path.as_path()).unwrap_or(path);
+    let path = path.as_path().absolutize().map(PathBuf::from).unwrap_or(path);
     let md = path.metadata();
     TreeEntry {
       path: path,
