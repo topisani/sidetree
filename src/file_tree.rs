@@ -1,5 +1,4 @@
-use crate::App;
-use crate::commands::Config;
+use crate::config::Config;
 use crate::util::StatefulList;
 use crate::TreeEntry;
 use crate::TreeEntryLine;

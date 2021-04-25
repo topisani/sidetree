@@ -1,13 +1,8 @@
+use std::path::PathBuf;
 use crate::keymap::parse_key;
-use crate::keymap::KeyMap;
-use serde::{Deserialize, Serialize};
-use termion::event::Key;
-
-use crate::FileTreeState;
-use crate::PathBuf;
-use crate::StatusLine;
 use combine::Parser;
 use std::collections::VecDeque;
+use termion::event::Key;
 
 pub struct CommandQueue {
   queue: VecDeque<Command>,
@@ -29,58 +24,6 @@ impl CommandQueue {
   }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Config {
-  pub show_hidden: bool,
-  pub open_cmd: String,
-  pub quit_on_open: bool,
-}
-
-impl Default for Config {
-  fn default() -> Config {
-    Config {
-      show_hidden: false,
-      open_cmd: String::from("kcr edit \"$1\"; kcr send focus"),
-      quit_on_open: false,
-    }
-  }
-}
-
-pub enum InputMode {
-  Normal,
-  Prompt,
-}
-
-pub struct App {
-  pub config: Config,
-  pub tree: FileTreeState,
-  pub exit: bool,
-  pub statusline: StatusLine,
-  pub queued_commands: CommandQueue,
-  pub keymap: KeyMap,
-}
-
-impl App {
-  pub fn new() -> App {
-    let mut res = App {
-      config: Config::default(),
-      tree: FileTreeState::new(PathBuf::from(".")),
-      exit: false,
-      statusline: StatusLine::new(),
-      queued_commands: CommandQueue::new(),
-      keymap: KeyMap::new(),
-    };
-    res.tree.update(&res.config);
-    res
-  }
-
-  pub fn run_queued_commands(&mut self) {
-    while let Some(cmd) = self.queued_commands.pop() {
-      self.run_command(cmd)
-    }
-  }
-}
-
 #[derive(Debug, Clone)]
 pub enum Command {
   Quit,
@@ -91,83 +34,6 @@ pub enum Command {
   Set(String, String),
   Cd(Option<PathBuf>),
   MapKey(Key, Box<Command>),
-}
-
-impl App {
-  pub fn run_command(&mut self, cmd: Command) {
-    use Command::*;
-    match cmd {
-      Quit => {
-        self.quit();
-      }
-      Shell(cmd, args) => {
-        run_shell(self, cmd.as_str(), args.iter().map(|x| x.as_str()));
-      }
-      Open(path) => {
-        let cmd = self.config.open_cmd.clone();
-        let path = path.as_ref().unwrap_or_else(|| &self.tree.entry().path);
-        let path = path.clone();
-        run_shell(self, cmd.as_str(), path.to_str().iter().map(|x| *x));
-        if self.config.quit_on_open {
-          self.quit();
-        }
-      }
-      CmdStr(cmd) => match parse_cmd(&cmd) {
-        Ok(cmd) => self.run_command(cmd),
-        Err(msg) => self.error(msg.as_str()),
-      },
-      Set(opt, val) => self.set_opt(opt, val),
-      Echo(msg) => {
-        self.statusline.info.info(msg.as_str());
-      }
-      Cd(path) => {
-        let path = path.as_ref().unwrap_or_else(|| &self.tree.entry().path);
-        let path = path.clone();
-        match std::env::set_current_dir(path.as_path()) {
-          Ok(()) => self
-            .tree
-            .change_root(&self.config, std::env::current_dir().unwrap()),
-          Err(err) => self.error(err.to_string().as_str()),
-        }
-      }
-      MapKey(key, cmd) => {
-        self.keymap.add_mapping(key, *cmd);
-      }
-    }
-    self.tree.update(&self.config);
-  }
-  fn error(&mut self, msg: &str) {
-    self.statusline.info.error(msg)
-  }
-
-  fn parse_opt<T: std::str::FromStr>(&mut self, val: String) -> Option<T> {
-    if let Ok(val) = val.parse::<T>() {
-      Some(val)
-    } else {
-      self.error("Could not parse option value");
-      None
-    }
-  }
-
-  fn set_opt(&mut self, opt: String, val: String) {
-    match opt.as_str() {
-      "open_cmd" => self.config.open_cmd = val,
-      "show_hidden" => {
-        self
-          .parse_opt::<bool>(val)
-          .map(|x| self.config.show_hidden = x);
-      }
-      "quit_on_open" => {
-        self
-          .parse_opt::<bool>(val)
-          .map(|x| self.config.quit_on_open = x);
-      }
-      _ => self.error(format!("unknown option {}", opt).as_str()),
-    }
-  }
-  fn quit(&mut self) {
-    self.exit = true;
-  }
 }
 
 pub fn build_cmd(cmd: String, args: Vec<String>) -> Result<Command, String> {
@@ -186,35 +52,6 @@ pub fn build_cmd(cmd: String, args: Vec<String>) -> Result<Command, String> {
   }
 }
 
-pub fn run_shell<'a, I: Iterator<Item = &'a str>>(app: &mut App, cmd: &str, args: I) {
-  let output = std::process::Command::new("sh")
-    .arg("-c")
-    .arg(cmd)
-    .arg("--")
-    .args(args)
-    .env(
-      "sidetree_root",
-      app.tree.root_entry.path.to_str().unwrap_or(""),
-    )
-    .env(
-      "sidetree_entry",
-      app.tree.entry().path.to_str().unwrap_or(""),
-    )
-    .output();
-  match output {
-    Err(err) => {
-      app.statusline.info.error(&err.to_string());
-    }
-    Ok(output) => {
-      if !output.status.success() {
-        app
-          .statusline
-          .info
-          .error(format!("Command failed with {}", output.status).as_str())
-      }
-    }
-  }
-}
 
 mod cmd_parser {
   use combine::{
@@ -310,12 +147,4 @@ pub fn read_config_file(path: &str) -> Result<Vec<Command>, String> {
     Ok(contents) => contents.lines().map(|l| parse_cmd(l)).collect(),
     Err(err) => Err(err.to_string()),
   }
-}
-
-pub fn run_config_file(app: &mut App, path: &str) -> Result<(), String> {
-  let cmds = read_config_file(path)?;
-  for cmd in cmds {
-    app.run_command(cmd)
-  }
-  Ok(())
 }

@@ -30,6 +30,7 @@ TODO
 
  - [x] Proper symlink handling
  - [x] Custom key maps, `map` command
+ - [ ] More navigation commands
  - [ ] Custom commands and aliases
  - [ ] Better script parsing
    - [ ] Comments
@@ -40,3 +41,4 @@ TODO
    - [ ] Git status
  - [ ] File icons by extension
  - [ ] Better prompt keybinds and cursor movements 
+ - [ ] IPC for two way syncing
