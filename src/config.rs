@@ -6,6 +6,7 @@ pub struct Config {
   pub show_hidden: bool,
   pub open_cmd: String,
   pub quit_on_open: bool,
+  pub file_icons: bool,
 }
 
 impl Default for Config {
@@ -14,6 +15,7 @@ impl Default for Config {
       show_hidden: false,
       open_cmd: String::from("kcr edit \"$1\"; kcr send focus"),
       quit_on_open: false,
+      file_icons: false,
     }
   }
 }
@@ -31,6 +33,10 @@ impl Config {
       }
       "quit_on_open" => {
         self.quit_on_open = Self::parse_opt(val)?;
+        Ok(())
+      }
+      "file_icons" => {
+        self.file_icons = Self::parse_opt(val)?;
         Ok(())
       }
       _ => Err(format!("unknown option {}", opt)),

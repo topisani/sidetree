@@ -4,6 +4,7 @@ mod app;
 mod commands;
 mod config;
 mod file_tree;
+mod icons;
 mod keymap;
 mod prompt;
 mod tree_entry;
