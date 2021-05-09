@@ -1,5 +1,7 @@
 set show_hidden false
 set open_cmd 'kcr edit "$sidetree_entry"; kcr focus'
 set quit_on_open true
-map <esc> quit
-map u cd ..
+map <c-c> quit
+map H cd ..
+map L cd
+map / shell kcr send cd "$sidetree_entry"

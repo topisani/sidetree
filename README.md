@@ -28,9 +28,10 @@ Commands can be placed in `~/.config/sidetree/sidetreerc`, one command per line:
 set show_hidden false
 set quit_on_open false
 set open_cmd 'kcr edit "$sidetree_entry"; kcr focus'
-map <esc> quit
-map u cd ..
-map <c-ret> cd
+map <c-c> quit
+map H cd ..
+map L cd
+map / shell kcr send cd "$sidetree_entry"
 ```
 
 TODO
