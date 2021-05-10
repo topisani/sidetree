@@ -14,7 +14,9 @@ Very simple integration with [kakoune](https://github.com/mawww/kakoune) in tmux
 
 ```
 def sidetree %{
-  $ tmux split-window -hb -t 1 -l 30 sidetree -s %val[buffile]
+  nop %sh{
+    tmux split-window -hb -t 1 -l 30 -e "KAKOUNE_SESSION=$kak_session" -e "KAKOUNE_CLIENT=$kak_client" sidetree -s "$kak_buffile"
+  }
 }
 map -docstring 'sidetree' global user <tab> ': sidetree<ret>'
 ```
