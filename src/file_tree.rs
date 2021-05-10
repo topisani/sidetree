@@ -20,6 +20,10 @@ pub struct ExpandedPaths {
 }
 
 impl ExpandedPaths {
+  pub fn extend(&mut self, x: &ExpandedPaths) {
+    self.expanded_paths.extend(x.expanded_paths.iter().map(|x| x.clone()));
+  }
+
   pub fn toggle_expanded(&mut self, path: &Path) {
     if !self.expanded_paths.remove(path) {
       self.expand(path);
@@ -56,8 +60,8 @@ impl FileTreeState {
     res
   }
 
-  pub fn set_expanded_paths(&mut self, exp: ExpandedPaths) {
-    self.expanded_paths = exp;
+  pub fn extend_expanded_paths(&mut self, exp: ExpandedPaths) {
+    self.expanded_paths.extend(&exp);
   }
 
   pub fn toggle_expanded(&mut self, path: &Path) {
@@ -99,8 +103,20 @@ impl FileTreeState {
   }
 
   pub fn select_path(&mut self, path: &Path) {
+    let path = path.absolutize().expect("Error absolutizing path");
     if let Some(idx) = self.lines.items.iter().position(|line| line.path == path) {
       self.lines.select_index(idx);
+    }
+  }
+
+  /// Expand parents to reveal <path>
+  pub fn expand_to_path(&mut self, path: &Path) {
+    let path = path.absolutize().expect("Error absolutizing path");
+    for anc in path.ancestors().skip(1) {
+      if !anc.starts_with(&self.root_entry.path) {
+        break;
+      }
+      self.expand(anc);
     }
   }
 

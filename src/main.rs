@@ -36,13 +36,12 @@ struct Opts {
   #[clap(short, long)]
   config: Option<PathBuf>,
 
-  /// Unless this is set, expanded paths and current selection will be saved in 
+  /// Unless this is set, expanded paths and current selection will be saved in
   /// $XDG_CACHE_DIR/sidetree/sidetreecache.toml
   #[clap(long)]
   no_cache: bool,
 
-  /// Preselect a path. Will currently only work if the path is available in 
-  /// pre-expanded directories
+  /// Preselect a path. Will expand all directories up to the path
   #[clap(short, long)]
   select: Option<PathBuf>,
 }
@@ -82,6 +81,8 @@ fn main() -> Result<(), Box<dyn Error>> {
   app.run_script_file(&conf_file)?;
 
   if let Some(path) = opts.select {
+    app.tree.expand_to_path(&path);
+    app.tree.update(&app.config);
     app.tree.select_path(&path);
   }
 

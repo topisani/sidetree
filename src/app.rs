@@ -58,7 +58,7 @@ impl App {
   }
 
   pub fn read_cache(&mut self, cache: Cache) {
-    self.tree.set_expanded_paths(cache.expanded_paths);
+    self.tree.extend_expanded_paths(cache.expanded_paths);
     self.tree.update(&self.config);
     self.tree.select_path(&cache.selected_path);
   }
