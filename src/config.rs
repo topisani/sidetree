@@ -21,10 +21,10 @@ impl Default for Config {
 }
 
 impl Config {
-  pub fn set_opt(&mut self, opt: String, val: String) -> Result<(), String> {
-    match opt.as_str() {
+  pub fn set_opt(&mut self, opt: &str, val: &str) -> Result<(), String> {
+    match opt {
       "open_cmd" => {
-        self.open_cmd = val;
+        self.open_cmd = val.to_string();
         Ok(())
       }
       "show_hidden" => {
@@ -43,7 +43,7 @@ impl Config {
     }
   }
 
-  fn parse_opt<T: std::str::FromStr>(val: String) -> Result<T, String> {
+  fn parse_opt<T: std::str::FromStr>(val: &str) -> Result<T, String> {
     match val.parse::<T>() {
       Ok(res) => Ok(res),
       Err(_) => Err("Could not parse option value".to_string()),

@@ -7,9 +7,10 @@ use crate::file_tree::{FileTree, FileTreeState};
 use crate::keymap::KeyMap;
 use crate::prompt::Prompt;
 use crate::prompt::StatusLine;
+use crate::cache::Cache;
 use tui::backend::Backend;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use termion::event::Key;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::Frame;
@@ -24,7 +25,7 @@ pub struct App {
 }
 
 impl App {
-  pub fn new() -> App {
+  pub fn new(cache: Cache) -> App {
     let mut res = App {
       config: Config::default(),
       tree: FileTreeState::new(PathBuf::from(".")),
@@ -33,13 +34,14 @@ impl App {
       queued_commands: CommandQueue::new(),
       keymap: KeyMap::new(),
     };
+    res.read_cache(cache);
     res.tree.update(&res.config);
     res
   }
 
   pub fn run_queued_commands(&mut self) {
     while let Some(cmd) = self.queued_commands.pop() {
-      self.run_command(cmd)
+      self.run_command(&cmd)
     }
   }
 }
@@ -53,6 +55,19 @@ impl App {
 
     f.render_stateful_widget(FileTree::new(), chunks[0], &mut self.tree);
     self.statusline.draw(f, chunks[1]);
+  }
+
+  pub fn read_cache(&mut self, cache: Cache) {
+    self.tree.set_expanded_paths(cache.expanded_paths);
+    self.tree.update(&self.config);
+    self.tree.select_path(&cache.selected_path);
+  }
+
+  pub fn get_cache(&self) -> Cache {
+    Cache {
+      expanded_paths: self.tree.expanded_paths.clone(),
+      selected_path: self.tree.entry().path.clone(),
+    }
   }
 
   pub fn update(&mut self) {
@@ -70,7 +85,7 @@ impl App {
       return Some(());
     }
     if let Some(cmd) = self.keymap.get_mapping(k) {
-      self.run_command(cmd);
+      self.run_command(&cmd);
       return Some(());
     }
     match k {
@@ -84,27 +99,27 @@ impl App {
         self.tree.select_prev();
       }
       Key::Char('\n') => {
-        let entry = self.tree.entry_mut();
+        let entry = self.tree.entry().clone();
         if entry.is_dir {
-          entry.toggle_expanded();
+          self.tree.toggle_expanded(&entry.path);
         } else {
-          self.run_command(Command::Open(None))
+          self.run_command(&Command::Open(None))
         }
       }
       Key::Char('l') => {
-        let entry = self.tree.entry_mut();
+        let entry = self.tree.entry().clone();
         if entry.is_dir {
-          if !entry.expanded {
-            entry.expand();
+          if !entry.is_expanded() {
+            self.tree.expand(&entry.path);
           } else {
             self.tree.select_next();
           }
         }
       }
       Key::Char('h') => {
-        let entry = self.tree.entry_mut();
-        if entry.expanded {
-          entry.collapse();
+        let entry = self.tree.entry().clone();
+        if entry.is_expanded() {
+          self.tree.collapse(&entry.path);
         } else {
           self.tree.select_up();
         }
@@ -116,7 +131,7 @@ impl App {
         self.statusline.prompt(Box::new(CmdPrompt {}));
       }
       Key::Alt('l') => {
-        self.run_command(Command::Cd(None));
+        self.run_command(&Command::Cd(None));
       }
       Key::Char('.') => {
         self.config.show_hidden = !self.config.show_hidden;
@@ -126,7 +141,7 @@ impl App {
     self.tree.update(&self.config);
     Some(())
   }
-  pub fn run_command(&mut self, cmd: Command) {
+  pub fn run_command(&mut self, cmd: &Command) {
     use Command::*;
     match cmd {
       Quit => {
@@ -145,7 +160,7 @@ impl App {
         }
       }
       CmdStr(cmd) => match parse_cmd(&cmd) {
-        Ok(cmd) => self.run_command(cmd),
+        Ok(cmd) => self.run_command(&cmd),
         Err(msg) => self.error(msg.as_str()),
       },
       Set(opt, val) => {
@@ -167,7 +182,12 @@ impl App {
         }
       }
       MapKey(key, cmd) => {
-        self.keymap.add_mapping(key, *cmd);
+        self.keymap.add_mapping(key.clone(), (**cmd).clone());
+      }
+      Block(cmds) => {
+        for x in cmds {
+          self.run_command(&x);          
+        }
       }
     }
     self.tree.update(&self.config);
@@ -179,10 +199,10 @@ impl App {
     self.exit = true;
   }
 
-  pub fn run_script_file(&mut self, path: &str) -> Result<(), String> {
+  pub fn run_script_file(&mut self, path: &Path) -> Result<(), String> {
     let cmds = read_config_file(path)?;
     for cmd in cmds {
-      self.run_command(cmd)
+      self.run_command(&cmd)
     }
     Ok(())
   }

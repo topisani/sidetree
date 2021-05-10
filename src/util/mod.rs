@@ -55,9 +55,14 @@ impl<T> StatefulList<T> {
       .index()
       .and_then(move |i| self.items.get(i))
   }
+  
   pub fn selected_mut(&mut self) -> Option<&mut T> {
     self
       .index()
       .and_then(move |i| self.items.get_mut(i))
+  }
+
+  pub fn select_index(&mut self, index: usize) {
+    self.state.select(Some(index));
   }
 }

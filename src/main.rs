@@ -1,19 +1,18 @@
 #![feature(try_trait)]
 #![feature(generators, generator_trait)]
 mod app;
+mod cache;
 mod commands;
 mod config;
 mod file_tree;
 mod icons;
 mod keymap;
 mod prompt;
-mod tree_entry;
 mod util;
 
-use crate::app::App;
 use crate::commands::Command;
-use crate::tree_entry::*;
-use std::fs::File;
+use crate::{app::App, cache::Cache};
+use std::{fs::File, path::PathBuf};
 
 use clap::Clap;
 use std::error::Error;
@@ -21,7 +20,6 @@ use std::io;
 use termion::input::MouseTerminal;
 use termion::raw::IntoRawMode;
 use termion::screen::AlternateScreen;
-use tui::backend::Backend;
 use tui::backend::TermionBackend;
 use tui::Terminal;
 
@@ -36,10 +34,20 @@ use crate::util::event::{Event, Events};
 struct Opts {
   /// Set a config file to use. By default uses $XDG_CONFIG_DIR/sidetree/sidetreerc
   #[clap(short, long)]
-  config: Option<String>,
+  config: Option<PathBuf>,
+
+  /// Unless this is set, expanded paths and current selection will be saved in 
+  /// $XDG_CACHE_DIR/sidetree/sidetreecache.toml
+  #[clap(long)]
+  no_cache: bool,
+
+  /// Preselect a path. Will currently only work if the path is available in 
+  /// pre-expanded directories
+  #[clap(short, long)]
+  select: Option<PathBuf>,
 }
 
-fn default_conf_file() -> String {
+fn default_conf_file() -> PathBuf {
   let xdg = xdg::BaseDirectories::with_prefix("sidetree").unwrap();
   let conf_file = xdg
     .place_config_file("sidetreerc")
@@ -47,7 +55,7 @@ fn default_conf_file() -> String {
   if !conf_file.exists() {
     File::create(&conf_file).expect("Cannot create config file");
   }
-  conf_file.to_str().map(|s| s.to_string()).unwrap()
+  conf_file
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -61,9 +69,22 @@ fn main() -> Result<(), Box<dyn Error>> {
   let mut terminal = Terminal::new(backend)?;
 
   let mut events = Events::new();
-  let mut app = App::new();
+
+  let cache = if !opts.no_cache {
+    Cache::from_file(&Cache::default_file_path()).expect("Failed to read cache file")
+  } else {
+    Cache::default()
+  };
+
+  let mut app = App::new(cache);
   let conf_file = opts.config.unwrap_or_else(default_conf_file);
-  app.run_script_file(conf_file.as_str())?;
+
+  app.run_script_file(&conf_file)?;
+
+  if let Some(path) = opts.select {
+    app.tree.select_path(&path);
+  }
+
   loop {
     terminal.draw(|f| {
       app.draw(f);
@@ -81,6 +102,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     if app.exit {
       break;
     }
+  }
+
+  if !opts.no_cache {
+    app.get_cache().write_file(&Cache::default_file_path())
   }
 
   Ok(())

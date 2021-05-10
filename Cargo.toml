@@ -1,6 +1,6 @@
 [package]
 name = "sidetree"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Tobias Pisani <topisani@hamsterpoison.com>"]
 edition = "2018"
 description = "TUI file tree for usage with terminal text editors"
@@ -17,3 +17,4 @@ clap = "3.0.0-beta.2"
 xdg = "2.2.0"
 path-absolutize = "3.0.10"
 lazy_static = "1.4.0"
+toml = "0.5.8"

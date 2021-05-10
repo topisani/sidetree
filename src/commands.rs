@@ -1,7 +1,7 @@
-use std::path::PathBuf;
 use crate::keymap::parse_key;
 use combine::Parser;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, path::Path};
+use std::path::PathBuf;
 use termion::event::Key;
 
 pub struct CommandQueue {
@@ -24,7 +24,7 @@ impl CommandQueue {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Command {
   Quit,
   Shell(String, Vec<String>),
@@ -34,6 +34,7 @@ pub enum Command {
   Set(String, String),
   Cd(Option<PathBuf>),
   MapKey(Key, Box<Command>),
+  Block(Vec<Command>),
 }
 
 pub fn build_cmd(cmd: String, args: Vec<String>) -> Result<Command, String> {
@@ -52,7 +53,6 @@ pub fn build_cmd(cmd: String, args: Vec<String>) -> Result<Command, String> {
   }
 }
 
-
 mod cmd_parser {
   use combine::{
     error::{Commit, ParseError},
@@ -63,6 +63,7 @@ mod cmd_parser {
       sequence::between,
       token::{any, satisfy, satisfy_map},
     },
+    choice,
     Parser, Stream, StreamOnce,
   };
 
@@ -70,14 +71,10 @@ mod cmd_parser {
   where
     P: Parser<Input>,
     Input: Stream<Token = char>,
-    <Input as StreamOnce>::Error: ParseError<
-      <Input as StreamOnce>::Token,
-      <Input as StreamOnce>::Range,
-      <Input as StreamOnce>::Position,
-    >,
   {
     p.skip(spaces())
   }
+  
   fn cmd_str_char<Input>(str_sep: char) -> impl Parser<Input, Output = char>
   where
     Input: Stream<Token = char>,
@@ -106,6 +103,7 @@ mod cmd_parser {
       }
     })
   }
+  
   fn is_word_char(c: char) -> bool {
     if c.is_whitespace() {
       return false;
@@ -113,24 +111,30 @@ mod cmd_parser {
     if c == '#' {
       return false;
     }
+    if c == ';' {
+      return false;
+    }
     return true;
   }
+
+  fn arg<Input: Stream<Token = char>>() -> impl Parser<Input, Output = String> {
+    let word_char = || satisfy(is_word_char);
+    let word = || many1(word_char());
+    let double_quotes = || between(char('"'), lex(char('"')), many(cmd_str_char('"')));
+    let single_quotes = || between(char('\''), lex(char('\'')), many(cmd_str_char('\'')));
+    choice!(
+      double_quotes(),
+      single_quotes(),
+      word()
+    )
+  }
+
   pub fn cmd<Input>() -> impl Parser<Input, Output = (String, Vec<String>)>
   where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
   {
-    let word_char = satisfy(is_word_char);
-    let word = many1(satisfy(is_word_char));
-    let cmd_arg = between(char('"'), lex(char('"')), many(cmd_str_char('"')))
-      .or(between(
-        char('\''),
-        lex(char('\'')),
-        many(cmd_str_char('\'')),
-      ))
-      .or(many1(word_char));
-
-    lex(word).and(many(lex(cmd_arg)))
+    lex(arg()).and(many(lex(arg())))
   }
 }
 
@@ -141,10 +145,51 @@ pub fn parse_cmd(input: &str) -> Result<Command, String> {
   }
 }
 
-pub fn read_config_file(path: &str) -> Result<Vec<Command>, String> {
+pub fn read_config_file(path: &Path) -> Result<Vec<Command>, String> {
   let contents = std::fs::read_to_string(path);
   match contents {
     Ok(contents) => contents.lines().map(|l| parse_cmd(l)).collect(),
     Err(err) => Err(err.to_string()),
+  }
+}
+
+#[cfg(test)]
+mod test {
+  use crate::commands::*;
+  use combine::StreamOnce;
+
+  fn cmd_parse_test(input: &str) -> Result<(String, Vec<String>), <&str as StreamOnce>::Error> {
+    cmd_parser::cmd().parse(input).map(|((cmd, args), rem)| {
+      assert!(rem.is_empty());
+      (cmd, args)
+    })
+  }
+
+  #[test]
+  fn parse_cmd_quit() {
+    let res = parse_cmd("quit");
+    assert_eq!(res, Ok(Command::Quit));
+  }
+  #[test]
+  fn parse_cmd_string() {
+    let res = cmd_parse_test("cmd 'arg \"1' \"arg '2\"");
+    assert_eq!(
+      res,
+      Ok((
+        "cmd".to_string(),
+        vec!["arg \"1".to_string(), "arg '2".to_string()]
+      ))
+    );
+  }
+  #[test]
+  fn parse_cmd_multiple() {
+    let res = cmd_parse_test("cmd1 a b; cmd2 c d;; ; ");
+    assert_eq!(
+      res,
+      Ok((
+        "cmd".to_string(),
+        vec!["arg \"1".to_string(), "arg '2".to_string()]
+      ))
+    );
   }
 }
