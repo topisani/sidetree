@@ -1,3 +1,4 @@
+use crate::cache::Cache;
 use crate::commands::parse_cmd;
 use crate::commands::read_config_file;
 use crate::commands::Command;
@@ -7,7 +8,6 @@ use crate::file_tree::{FileTree, FileTreeState};
 use crate::keymap::KeyMap;
 use crate::prompt::Prompt;
 use crate::prompt::StatusLine;
-use crate::cache::Cache;
 use tui::backend::Backend;
 
 use std::path::{Path, PathBuf};
@@ -147,14 +147,14 @@ impl App {
       Quit => {
         self.quit();
       }
-      Shell(cmd, args) => {
-        run_shell(self, cmd.as_str(), args.iter().map(|x| x.as_str()));
+      Shell(cmd) => {
+        self.run_shell(cmd.as_str());
       }
       Open(path) => {
         let cmd = self.config.open_cmd.clone();
         let path = path.as_ref().unwrap_or_else(|| &self.tree.entry().path);
-        let path = path.clone();
-        run_shell(self, cmd.as_str(), path.to_str().iter().map(|x| *x));
+        let _path = path.clone();
+        self.run_shell(cmd.as_str());
         if self.config.quit_on_open {
           self.quit();
         }
@@ -186,7 +186,7 @@ impl App {
       }
       Block(cmds) => {
         for x in cmds {
-          self.run_command(&x);          
+          self.run_command(&x);
         }
       }
     }
@@ -206,36 +206,36 @@ impl App {
     }
     Ok(())
   }
-}
 
-fn run_shell<'a, I: Iterator<Item = &'a str>>(app: &mut App, cmd: &str, args: I) {
+fn run_shell<'a>(&mut self, cmd: &str) {
   let output = std::process::Command::new("sh")
     .arg("-c")
     .arg(cmd)
     .arg("--")
-    .args(args)
+    .arg(self.tree.entry().path.to_str().unwrap_or(""))
     .env(
       "sidetree_root",
-      app.tree.root_entry.path.to_str().unwrap_or(""),
+      self.tree.root_entry.path.to_str().unwrap_or(""),
     )
     .env(
       "sidetree_entry",
-      app.tree.entry().path.to_str().unwrap_or(""),
+      self.tree.entry().path.to_str().unwrap_or(""),
     )
     .output();
   match output {
     Err(err) => {
-      app.statusline.info.error(&err.to_string());
+      self.statusline.info.error(&err.to_string());
     }
     Ok(output) => {
       if !output.status.success() {
-        app
+        self
           .statusline
           .info
           .error(format!("Command failed with {}", output.status).as_str())
       }
     }
   }
+}
 }
 
 pub struct ShellPrompt {}
@@ -245,7 +245,7 @@ impl Prompt for ShellPrompt {
     "!"
   }
   fn on_submit(&mut self, cmds: &mut CommandQueue, text: &str) {
-    cmds.push(Command::Shell(text.to_string(), vec![]))
+    cmds.push(Command::Shell(text.to_string()))
   }
   fn on_cancel(&mut self, _: &mut CommandQueue) {}
 }

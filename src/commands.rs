@@ -27,7 +27,7 @@ impl CommandQueue {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
   Quit,
-  Shell(String, Vec<String>),
+  Shell(String),
   Open(Option<PathBuf>),
   CmdStr(String),
   Echo(String),
@@ -43,7 +43,7 @@ pub fn build_cmd(cmd: String, args: Vec<String>) -> Result<Command, String> {
     "open" => Ok(Command::Open(None)),
     "set" => Ok(Command::Set(args[0].clone(), args[1].clone())),
     "echo" => Ok(Command::Echo(args.join(" "))),
-    "shell" => Ok(Command::Shell(args.join(" "), vec![])),
+    "shell" => Ok(Command::Shell(args.join(" "))),
     "cd" => Ok(Command::Cd(args.get(0).map(PathBuf::from))),
     "map" => Ok(Command::MapKey(
       parse_key(args[0].as_str()).map_err(|_| "could not parse key")?,

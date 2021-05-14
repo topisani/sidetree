@@ -21,7 +21,9 @@ pub struct ExpandedPaths {
 
 impl ExpandedPaths {
   pub fn extend(&mut self, x: &ExpandedPaths) {
-    self.expanded_paths.extend(x.expanded_paths.iter().map(|x| x.clone()));
+    self
+      .expanded_paths
+      .extend(x.expanded_paths.iter().map(|x| x.clone()));
   }
 
   pub fn toggle_expanded(&mut self, path: &Path) {
@@ -285,19 +287,19 @@ impl TreeEntry {
     } else {
       if self.is_dir {
         if self.expanded {
-          ''
+          ''
         } else {
           if self.is_link {
             ''
           } else {
-            ''
+            ''
           }
         }
       } else {
         if self.is_link {
           ''
         } else {
-          ''
+          ''
         }
       }
     }
