@@ -36,7 +36,7 @@ Commands can be placed in `~/.config/sidetree/sidetreerc`, one command per line:
 ```
 set show_hidden false
 set quit_on_open false
-set open_cmd 'kcr edit "$sidetree_entry"; kcr focus'
+set open_cmd 'kcr edit "$sidetree_entry"; kcr send focus'
 map <c-c> quit
 map H cd ..
 map L cd
@@ -50,6 +50,7 @@ TODO
  - [x] Custom key maps, `map` command
  - [x] More navigation commands
  - [x] Save selection & expanded folders between launches
+ - [x] Backend for styling entries
  - [ ] Custom commands and aliases
  - [ ] Better script parsing
    - [ ] Comments

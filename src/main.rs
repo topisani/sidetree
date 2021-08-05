@@ -1,4 +1,3 @@
-#![feature(try_trait)]
 #![feature(generators, generator_trait)]
 mod app;
 mod cache;
@@ -24,6 +23,9 @@ use tui::backend::TermionBackend;
 use tui::Terminal;
 
 use crate::util::event::{Event, Events};
+
+#[macro_use]
+extern crate combine;
 
 #[derive(Clap)]
 #[clap(

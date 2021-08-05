@@ -1,13 +1,17 @@
+use crate::config::Config;
+use crate::icons;
 use crate::util::StatefulList;
-use crate::{config::Config, icons};
 use path_absolutize::Absolutize;
 use std::collections::HashSet;
+use std::iter;
 use std::path::Path;
 use std::path::PathBuf;
 use tui::{
   buffer::Buffer,
   layout::Rect,
   style::{Color, Modifier, Style},
+  text::Span,
+  text::Spans,
   widgets::List,
   widgets::ListItem,
   widgets::StatefulWidget,
@@ -185,14 +189,12 @@ impl StatefulWidget for FileTree {
       .lines
       .items
       .iter()
-      .map(|tel| ListItem::new("  ".repeat(tel.level) + tel.line.as_str()))
+      .map(|x| x.make_line())
       .collect();
     let list = List::new(items)
       .style(Style::default().fg(Color::White))
       .highlight_style(
-        Style::default()
-          .bg(Color::LightBlue)
-          .add_modifier(Modifier::BOLD),
+        Style::default().add_modifier(Modifier::REVERSED)
       );
     list.render(area, buf, &mut state.lines.state);
   }
@@ -211,8 +213,18 @@ pub struct TreeEntry {
 /// Identified by `path` which is used to locate the matching
 pub struct TreeEntryLine {
   pub path: PathBuf,
-  pub line: String,
+  pub line: Vec<(String, Style)>,
   pub level: usize,
+}
+
+impl TreeEntryLine {
+  fn make_line(&self) -> ListItem {
+    ListItem::new(Spans(
+      iter::once(Span::styled("  ".repeat(self.level), self.line.first().map(|(_, s)| s.clone()).unwrap_or(Style::default())))
+        .chain(self.line.iter().map(|(x, s)| Span::styled(x, s.clone())))
+        .collect(),
+    )).style(self.line.last().map(|(_, s)| s.clone()).unwrap_or(Style::default()))
+  }
 }
 
 impl TreeEntry {
@@ -323,9 +335,14 @@ impl TreeEntry {
         };
         format!("{} {} ", arrow, icon)
       };
+      let mainstyle = if self.is_dir {
+      	conf.dir_name_style
+      } else {
+        conf.file_name_style
+      };
       TreeEntryLine {
         path: self.path.clone(),
-        line: format!("{} {}", prefix, name),
+        line: vec![(prefix, conf.icon_style), (" ".to_string() + name, mainstyle)],
         level,
       }
     })

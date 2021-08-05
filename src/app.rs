@@ -207,35 +207,35 @@ impl App {
     Ok(())
   }
 
-fn run_shell<'a>(&mut self, cmd: &str) {
-  let output = std::process::Command::new("sh")
-    .arg("-c")
-    .arg(cmd)
-    .arg("--")
-    .arg(self.tree.entry().path.to_str().unwrap_or(""))
-    .env(
-      "sidetree_root",
-      self.tree.root_entry.path.to_str().unwrap_or(""),
-    )
-    .env(
-      "sidetree_entry",
-      self.tree.entry().path.to_str().unwrap_or(""),
-    )
-    .output();
-  match output {
-    Err(err) => {
-      self.statusline.info.error(&err.to_string());
-    }
-    Ok(output) => {
-      if !output.status.success() {
-        self
-          .statusline
-          .info
-          .error(format!("Command failed with {}", output.status).as_str())
+  fn run_shell<'a>(&mut self, cmd: &str) {
+    let output = std::process::Command::new("sh")
+      .arg("-c")
+      .arg(cmd)
+      .arg("--")
+      .arg(self.tree.entry().path.to_str().unwrap_or(""))
+      .env(
+        "sidetree_root",
+        self.tree.root_entry.path.to_str().unwrap_or(""),
+      )
+      .env(
+        "sidetree_entry",
+        self.tree.entry().path.to_str().unwrap_or(""),
+      )
+      .output();
+    match output {
+      Err(err) => {
+        self.statusline.info.error(&err.to_string());
+      }
+      Ok(output) => {
+        if !output.status.success() {
+          self
+            .statusline
+            .info
+            .error(format!("Command failed with {}", output.status).as_str())
+        }
       }
     }
   }
-}
 }
 
 pub struct ShellPrompt {}

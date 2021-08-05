@@ -1,7 +1,11 @@
 set show_hidden false
-set open_cmd 'kcr edit "$sidetree_entry"; kcr focus'
+set open_cmd 'kcr open "$sidetree_entry"'
 set quit_on_open true
 map <c-c> quit
 map H cd ..
 map L cd
 map / shell kcr send cd "$sidetree_entry"
+set icon_style darkgray 
+set dir_name_style lightblue+b
+set file_name_style reset
+set highlight_style +r
