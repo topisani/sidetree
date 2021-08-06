@@ -1,5 +1,5 @@
 # A TUI File tree panel
-![image](https://user-images.githubusercontent.com/3133596/115800615-4f633880-a3db-11eb-9b08-7509b6c0ec3c.png)
+![image](https://user-images.githubusercontent.com/3133596/128500582-5682d56c-7f26-4aa1-a3a5-33a0158fcddb.png)
 
 Built for integration with [kakoune](https://github.com/mawww/kakoune), but with a little
 bit of configuration, it can be used with most TUIs, or even as a minimal
