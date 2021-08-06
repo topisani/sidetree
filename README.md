@@ -10,7 +10,8 @@ Currently in early alpha stage, PRs are welcome!
 ## Installation
 
 Since sidetree is published on [crates.io](https://crates.io/crates/sidetree),
-any system with `cargo` installed can simply get sidetree by running
+any system with `cargo` installed can simply get sidetree by running. Notice however that sidetree 
+requires the rust toolchain nightly.
 ```sh
 cargo install sidetree
 ```
