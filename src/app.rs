@@ -53,7 +53,7 @@ impl App {
       .constraints([Constraint::Min(0), Constraint::Length(1)].as_ref())
       .split(f.size());
 
-    f.render_stateful_widget(FileTree::new(), chunks[0], &mut self.tree);
+    f.render_stateful_widget(FileTree::new(&self.config), chunks[0], &mut self.tree);
     self.statusline.draw(f, chunks[1]);
   }
 

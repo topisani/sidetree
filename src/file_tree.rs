@@ -173,15 +173,17 @@ impl FileTreeState {
   }
 }
 
-pub struct FileTree {}
+pub struct FileTree<'a> {
+	cfg: &'a Config
+}
 
-impl FileTree {
-  pub fn new() -> FileTree {
-    FileTree {}
+impl<'a> FileTree<'a> {
+  pub fn new(cfg: &'a Config) -> FileTree {
+    FileTree { cfg }
   }
 }
 
-impl StatefulWidget for FileTree {
+impl<'a> StatefulWidget for FileTree<'a> {
   type State = FileTreeState;
 
   fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
@@ -192,10 +194,7 @@ impl StatefulWidget for FileTree {
       .map(|x| x.make_line())
       .collect();
     let list = List::new(items)
-      .style(Style::default().fg(Color::White))
-      .highlight_style(
-        Style::default().add_modifier(Modifier::REVERSED)
-      );
+      .highlight_style(self.cfg.highlight_style);
     list.render(area, buf, &mut state.lines.state);
   }
 }
