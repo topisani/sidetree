@@ -21,12 +21,7 @@ cargo install sidetree
 Very simple integration with [kakoune](https://github.com/mawww/kakoune) in tmux:
 
 ```kak
-def sidetree %{
-  nop %sh{
-    tmux split-window -hb -t 1 -l 30 -e "KAKOUNE_SESSION=$kak_session" -e "KAKOUNE_CLIENT=$kak_client" sidetree -s "$kak_buffile"
-  }
-}
-map -docstring 'sidetree' global user <tab> ': sidetree<ret>'
+map -docstring 'file explorer' global normal <c-e> ':connect panel sidetree --select %val{buffile}<ret>'
 ```
 
 This also requires [kcr](https://github.com/alexherbo2/kakoune.cr)
@@ -35,17 +30,35 @@ This also requires [kcr](https://github.com/alexherbo2/kakoune.cr)
 
 Commands can be placed in `~/.config/sidetree/sidetreerc`, one command per line:
 ```
+# sidetree
+# https://github.com/topisani/sidetree
+# https://github.com/topisani/sidetree/blob/master/sidetreerc
+
+# General ──────────────────────────────────────────────────────────────────────
+
 set show_hidden false
-set open_cmd 'kcr open "$sidetree_entry"'
-set quit_on_open true
-map <c-c> quit
-map H cd ..
-map L cd
-map / shell kcr send cd "$sidetree_entry"
-set icon_style darkgray 
+set quit_on_open false
+set open_cmd 'kcr open "${sidetree_entry}"'
+
+# Appearance ───────────────────────────────────────────────────────────────────
+
+set file_icons true
+set icon_style darkgray
 set dir_name_style lightblue+b
 set file_name_style reset
 set highlight_style +r
+
+# Mappings ─────────────────────────────────────────────────────────────────────
+
+map <c-c> quit
+map H cd ..
+map L cd
+map ! shell 'nohup alacritty --class popup --working-directory "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
+map $ shell 'nohup tmux display-popup -d "${sidetree_entry}" -E < /dev/null > /dev/null 2>&1 &'
+map / shell 'kcr send cd "${sidetree_entry}"'
+map e shell 'kcr edit "${sidetree_entry}"'
+map x shell 'arc unarchive "${sidetree_entry}"'
+map m shell 'nohup mpv -no-terminal "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
 ```
 
 ## Commands
