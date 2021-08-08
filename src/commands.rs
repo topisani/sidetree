@@ -1,7 +1,7 @@
 use crate::keymap::parse_key;
 use combine::Parser;
-use std::{collections::VecDeque, path::Path};
 use std::path::PathBuf;
+use std::{collections::VecDeque, path::Path};
 use termion::event::Key;
 
 pub struct CommandQueue {
@@ -34,8 +34,9 @@ pub enum Command {
   Set(String, String),
   Cd(Option<PathBuf>),
   MapKey(Key, Box<Command>),
-  Block(Vec<Command>),
 }
+
+type CmdBlock = Vec<Command>;
 
 pub fn build_cmd(cmd: String, args: Vec<String>) -> Result<Command, String> {
   match cmd.as_str() {
@@ -54,27 +55,31 @@ pub fn build_cmd(cmd: String, args: Vec<String>) -> Result<Command, String> {
 }
 
 mod cmd_parser {
-  use combine::{
-    error::{Commit, ParseError},
-    parser::{
-      char::{char, spaces},
-      function::parser,
-      repeat::{many, many1},
-      sequence::between,
-      token::{any, satisfy, satisfy_map},
-    },
-    choice,
-    Parser, Stream, StreamOnce,
-  };
+  use combine::error::Commit;
+  use combine::error::ParseError;
+  use combine::parser::char::char;
+  use combine::parser::char::spaces;
+  use combine::parser::combinator::ignore;
+  use combine::parser::function::parser;
+  use combine::parser::repeat::many;
+  use combine::parser::repeat::many1;
+  use combine::parser::sequence::between;
+  use combine::parser::token::any;
+  use combine::parser::token::satisfy;
+  use combine::parser::token::satisfy_map;
+  use combine::*;
 
   fn lex<Input, P>(p: P) -> impl Parser<Input, Output = P::Output>
   where
     P: Parser<Input>,
     Input: Stream<Token = char>,
   {
-    p.skip(spaces())
+    p.skip(skip_many(satisfy(|x| match x {
+      '\n' => false,
+      x => x.is_whitespace(),
+    })))
   }
-  
+
   fn cmd_str_char<Input>(str_sep: char) -> impl Parser<Input, Output = char>
   where
     Input: Stream<Token = char>,
@@ -103,7 +108,7 @@ mod cmd_parser {
       }
     })
   }
-  
+
   fn is_word_char(c: char) -> bool {
     if c.is_whitespace() {
       return false;
@@ -122,11 +127,7 @@ mod cmd_parser {
     let word = || many1(word_char());
     let double_quotes = || between(char('"'), lex(char('"')), many(cmd_str_char('"')));
     let single_quotes = || between(char('\''), lex(char('\'')), many(cmd_str_char('\'')));
-    choice!(
-      double_quotes(),
-      single_quotes(),
-      word()
-    )
+    choice!(double_quotes(), single_quotes(), word())
   }
 
   pub fn cmd<Input>() -> impl Parser<Input, Output = (String, Vec<String>)>
@@ -136,19 +137,33 @@ mod cmd_parser {
   {
     lex(arg()).and(many(lex(arg())))
   }
-}
 
-pub fn parse_cmd(input: &str) -> Result<Command, String> {
-  match cmd_parser::cmd().parse(input) {
-    Err(_) => Err("error parsing command".to_string()),
-    Ok(((cmd, args), _)) => build_cmd(cmd, args),
+  pub fn cmds<Input>() -> impl Parser<Input, Output = Vec<(String, Vec<String>)>>
+  where
+    Input: Stream<Token = char>,
+    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
+  {
+    let comment = || token('#').with(many::<String, _, _>(satisfy(|x| x != '\n')));
+    let comments = || skip_many(comment());
+    let cmd_sep = || one_of(";\n".chars());
+    let cmd = || lex(arg().skip(comments())).and(many(lex(arg().skip(comments()))));
+    let skipped = || spaces().skip(skip_many(ignore(lex(cmd_sep())).or(lex(ignore(comment())))));
+    skipped().with(many::<Vec<_>, _, _>(cmd().skip(skipped())))
   }
 }
 
-pub fn read_config_file(path: &Path) -> Result<Vec<Command>, String> {
+pub fn parse_cmds(input: &str) -> Result<CmdBlock, String> {
+  match cmd_parser::cmds().parse(input) {
+    Err(_) => Err("error parsing command".to_string()),
+    Ok((mut cmds, "")) => cmds.drain(..).map(|(c, a)| build_cmd(c, a)).collect(),
+    Ok((_, rem)) => Err(format!("Unexpected content after commands: {}", rem)),
+  }
+}
+
+pub fn read_config_file(path: &Path) -> Result<CmdBlock, String> {
   let contents = std::fs::read_to_string(path);
   match contents {
-    Ok(contents) => contents.lines().map(|l| parse_cmd(l)).collect(),
+    Ok(contents) => parse_cmds(contents.as_str()),
     Err(err) => Err(err.to_string()),
   }
 }
@@ -167,8 +182,8 @@ mod test {
 
   #[test]
   fn parse_cmd_quit() {
-    let res = parse_cmd("quit");
-    assert_eq!(res, Ok(Command::Quit));
+    let res = parse_cmds("quit");
+    assert_eq!(res, Ok(vec![Command::Quit]));
   }
   #[test]
   fn parse_cmd_string() {
@@ -183,13 +198,13 @@ mod test {
   }
   #[test]
   fn parse_cmd_multiple() {
-    let res = cmd_parse_test("cmd1 a b; cmd2 c d;; ; ");
     assert_eq!(
-      res,
-      Ok((
-        "cmd".to_string(),
-        vec!["arg \"1".to_string(), "arg '2".to_string()]
-      ))
+      parse_cmds("quit; open"),
+      Ok(vec![Command::Quit, Command::Open(None)])
+    );
+    assert_eq!(
+      parse_cmds("quit\nopen"),
+      Ok(vec![Command::Quit, Command::Open(None)])
     );
   }
 }

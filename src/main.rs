@@ -14,6 +14,7 @@ use crate::{app::App, cache::Cache};
 use std::{fs::File, path::PathBuf};
 
 use clap::Clap;
+use commands::parse_cmds;
 use std::error::Error;
 use std::io;
 use termion::input::MouseTerminal;
@@ -46,6 +47,10 @@ struct Opts {
   /// Preselect a path. Will expand all directories up to the path
   #[clap(short, long)]
   select: Option<PathBuf>,
+
+  /// Commands to run on startup
+  #[clap(short, long)]
+  exec: Option<String>,
 }
 
 fn default_conf_file() -> PathBuf {
@@ -81,6 +86,9 @@ fn main() -> Result<(), Box<dyn Error>> {
   let conf_file = opts.config.unwrap_or_else(default_conf_file);
 
   app.run_script_file(&conf_file)?;
+  if opts.exec.is_some() {
+    app.run_commands(&parse_cmds(&opts.exec.unwrap())?)
+  }
 
   if let Some(path) = opts.select {
     app.tree.expand_to_path(&path);

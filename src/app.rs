@@ -1,5 +1,5 @@
 use crate::cache::Cache;
-use crate::commands::parse_cmd;
+use crate::commands::parse_cmds;
 use crate::commands::read_config_file;
 use crate::commands::Command;
 use crate::commands::CommandQueue;
@@ -141,6 +141,12 @@ impl App {
     self.tree.update(&self.config);
     Some(())
   }
+  pub fn run_commands(&mut self, cmds: &Vec<Command>) {
+  	for c in cmds {
+    	self.run_command(c);
+  	}
+  }
+  
   pub fn run_command(&mut self, cmd: &Command) {
     use Command::*;
     match cmd {
@@ -159,8 +165,8 @@ impl App {
           self.quit();
         }
       }
-      CmdStr(cmd) => match parse_cmd(&cmd) {
-        Ok(cmd) => self.run_command(&cmd),
+      CmdStr(cmd) => match parse_cmds(&cmd) {
+        Ok(cmds) =>  self.run_commands(&cmds),
         Err(msg) => self.error(msg.as_str()),
       },
       Set(opt, val) => {
@@ -184,11 +190,6 @@ impl App {
       MapKey(key, cmd) => {
         self.keymap.add_mapping(key.clone(), (**cmd).clone());
       }
-      Block(cmds) => {
-        for x in cmds {
-          self.run_command(&x);
-        }
-      }
     }
     self.tree.update(&self.config);
   }
@@ -201,9 +202,7 @@ impl App {
 
   pub fn run_script_file(&mut self, path: &Path) -> Result<(), String> {
     let cmds = read_config_file(path)?;
-    for cmd in cmds {
-      self.run_command(&cmd)
-    }
+    self.run_commands(&cmds);
     Ok(())
   }
 

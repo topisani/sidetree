@@ -145,12 +145,12 @@ TODO
  - [x] Backend for styling entries
  - [x] File icons by extension
  - [x] Custom formatting
+ - [x] Better script parsing
+   - [x] Comments
+   - [x] Blocks
  - [ ] Custom commands and aliases
- - [ ] Better script parsing
-   - [ ] Comments
-   - [ ] Blocks
+ - [ ] Better prompt keybinds and cursor movements 
  - [ ] Git integration
    - [ ] Gitignore
    - [ ] Git status
- - [ ] Better prompt keybinds and cursor movements 
  - [ ] IPC for two way syncing
