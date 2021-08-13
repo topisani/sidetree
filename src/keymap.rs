@@ -1,11 +1,9 @@
-use combine::error::StreamError;
 use crate::Command;
 use combine::parser::char::char;
 use combine::parser::char::string;
 use combine::parser::char::letter;
 use combine::*;
 use std::collections::HashMap;
-use std::error::Error;
 use termion::event::Key;
 
 pub struct KeyMap {

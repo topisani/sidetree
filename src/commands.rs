@@ -1,35 +1,16 @@
 use crate::keymap::parse_key;
 use combine::Parser;
 use std::collections::HashMap;
-use std::collections::VecDeque;
 use std::path::Path;
 use std::path::PathBuf;
 use termion::event::Key;
 
-pub struct CommandQueue {
-  queue: VecDeque<Command>,
-}
-
-impl CommandQueue {
-  pub fn new() -> CommandQueue {
-    CommandQueue {
-      queue: VecDeque::new(),
-    }
-  }
-
-  pub fn push(&mut self, cmd: Command) {
-    self.queue.push_back(cmd);
-  }
-
-  pub fn pop(&mut self) -> Option<Command> {
-    self.queue.pop_front()
-  }
-}
-
+#[allow(dead_code)]
 pub struct CmdManager {
   cmds: HashMap<String, CmdBlock>,
 }
 
+#[allow(dead_code)]
 pub enum Argument {
   String(String),
   ConfOpt(String),

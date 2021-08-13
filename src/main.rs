@@ -25,7 +25,6 @@ use tui::Terminal;
 
 use crate::util::event::{Event, Events};
 
-#[macro_use]
 extern crate combine;
 
 #[derive(Clap)]
@@ -74,7 +73,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   let backend = TermionBackend::new(stdout);
   let mut terminal = Terminal::new(backend)?;
 
-  let mut events = Events::new();
+  let events = Events::new();
 
   let cache = if !opts.no_cache {
     Cache::from_file(&Cache::default_file_path()).expect("Failed to read cache file")
@@ -103,11 +102,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if let Event::Input(input) = events.next()? {
       app.on_key(input);
-      if app.statusline.has_focus() {
-        events.disable_exit_key();
-      } else {
-        events.enable_exit_key();
-      }
     }
     app.tick();
     if app.exit {

@@ -2,7 +2,6 @@ use crate::cache::Cache;
 use crate::commands::parse_cmds;
 use crate::commands::read_config_file;
 use crate::commands::Command;
-use crate::commands::CommandQueue;
 use crate::config::Config;
 use crate::file_tree::{FileTree, FileTreeState};
 use crate::keymap::KeyMap;
@@ -20,7 +19,6 @@ pub struct App {
   pub tree: FileTreeState,
   pub exit: bool,
   pub statusline: StatusLine,
-  pub queued_commands: CommandQueue,
   pub keymap: KeyMap,
 }
 
@@ -31,18 +29,11 @@ impl App {
       tree: FileTreeState::new(PathBuf::from(".")),
       exit: false,
       statusline: StatusLine::new(),
-      queued_commands: CommandQueue::new(),
       keymap: KeyMap::new(),
     };
     res.read_cache(cache);
     res.tree.update(&res.config);
     res
-  }
-
-  pub fn run_queued_commands(&mut self) {
-    while let Some(cmd) = self.queued_commands.pop() {
-      self.run_command(&cmd)
-    }
   }
 }
 
@@ -75,13 +66,18 @@ impl App {
   }
 
   pub fn tick(&mut self) {
-    self.run_queued_commands();
+    self.update();
   }
 
   pub fn on_key(&mut self, k: Key) -> Option<()> {
     if self.statusline.has_focus() {
-      self.statusline.on_key(&mut self.queued_commands, k);
-      self.tree.update(&self.config);
+      let (update, cmd) = self.statusline.on_key(k);
+      if let Some(cmd) = cmd {
+        self.run_command(&cmd);
+      }
+      if update {
+        self.update();
+      }
       return Some(());
     }
     if let Some(cmd) = self.keymap.get_mapping(k) {
@@ -138,15 +134,14 @@ impl App {
       }
       _ => {}
     }
-    self.tree.update(&self.config);
     Some(())
   }
   pub fn run_commands(&mut self, cmds: &Vec<Command>) {
-  	for c in cmds {
-    	self.run_command(c);
-  	}
+    for c in cmds {
+      self.run_command(c);
+    }
   }
-  
+
   pub fn run_command(&mut self, cmd: &Command) {
     use Command::*;
     match cmd {
@@ -166,7 +161,7 @@ impl App {
         }
       }
       CmdStr(cmd) => match parse_cmds(&cmd) {
-        Ok(cmds) =>  self.run_commands(&cmds),
+        Ok(cmds) => self.run_commands(&cmds),
         Err(msg) => self.error(msg.as_str()),
       },
       Set(opt, val) => {
@@ -191,7 +186,7 @@ impl App {
         self.keymap.add_mapping(key.clone(), (**cmd).clone());
       }
     }
-    self.tree.update(&self.config);
+    self.update();
   }
   pub fn error(&mut self, msg: &str) {
     self.statusline.info.error(msg)
@@ -243,10 +238,12 @@ impl Prompt for ShellPrompt {
   fn prompt_text(&self) -> &str {
     "!"
   }
-  fn on_submit(&mut self, cmds: &mut CommandQueue, text: &str) {
-    cmds.push(Command::Shell(text.to_string()))
+  fn on_submit(&mut self, text: &str) -> Option<Command> {
+    Some(Command::Shell(text.to_string()))
   }
-  fn on_cancel(&mut self, _: &mut CommandQueue) {}
+  fn on_cancel(&mut self) -> Option<Command> {
+    None
+  }
 }
 
 pub struct CmdPrompt {}
@@ -255,8 +252,10 @@ impl Prompt for CmdPrompt {
   fn prompt_text(&self) -> &str {
     ":"
   }
-  fn on_submit(&mut self, cmds: &mut CommandQueue, text: &str) {
-    cmds.push(Command::CmdStr(text.to_string()))
+  fn on_submit(&mut self, text: &str) -> Option<Command> {
+    Some(Command::CmdStr(text.to_string()))
   }
-  fn on_cancel(&mut self, _: &mut CommandQueue) {}
+  fn on_cancel(&mut self) -> Option<Command> {
+    None
+  }
 }

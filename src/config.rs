@@ -47,6 +47,7 @@ impl Config {
   pub fn set_opt(&mut self, name: &str, val: &str) -> Result<(), String> {
     self.get_child_mut(name)?.set_opt(val)
   }
+  #[allow(dead_code)]
   pub fn get_opt(&self, name: &str) -> Result<String, String> {
     Ok(self.get_child(name)?.get_opt())
   }
@@ -77,6 +78,16 @@ impl ConfOpt for bool {
     } else {
       "false".to_string()
     }
+  }
+}
+
+impl ConfOpt for i32 {
+  fn set_opt(&mut self, val: &str) -> Result<(), String> {
+    *self = parse_opt(val)?;
+    Ok(())
+  }
+  fn get_opt(&self) -> String {
+    self.to_string()
   }
 }
 
@@ -219,16 +230,14 @@ mod style_parser {
   }
 
   fn modifier<'a>() -> impl EasyParser<&'a str, Output = Modifier> {
-    satisfy_map(|x: char| {
-      match x {
-        'b' => Some(Modifier::BOLD),
-        'd' => Some(Modifier::DIM),
-        'i' => Some(Modifier::ITALIC),
-        'u' => Some(Modifier::UNDERLINED),
-        'B' => Some(Modifier::SLOW_BLINK),
-        'r' => Some(Modifier::REVERSED),
-        _ => None,
-      }
+    satisfy_map(|x: char| match x {
+      'b' => Some(Modifier::BOLD),
+      'd' => Some(Modifier::DIM),
+      'i' => Some(Modifier::ITALIC),
+      'u' => Some(Modifier::UNDERLINED),
+      'B' => Some(Modifier::SLOW_BLINK),
+      'r' => Some(Modifier::REVERSED),
+      _ => None,
     })
   }
 
@@ -265,6 +274,7 @@ pub fn parse_style(input: &str) -> Result<Style, String> {
   }
 }
 
+#[allow(dead_code)]
 pub fn parse_color(input: &str) -> Result<Color, String> {
   match style_parser::color().easy_parse(input) {
     Err(e) => Err(format!("error parsing color: {}", e)),

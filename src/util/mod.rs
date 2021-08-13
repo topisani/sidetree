@@ -15,6 +15,7 @@ impl<T> StatefulList<T> {
     }
   }
 
+  #[allow(dead_code)]
   pub fn with_items(items: Vec<T>) -> StatefulList<T> {
     StatefulList {
       state: ListState::default(),
@@ -42,10 +43,6 @@ impl<T> StatefulList<T> {
     }
   }
 
-  pub fn unselect(&mut self) {
-    self.state.select(None);
-  }
-
   pub fn index(&self) -> Option<usize> {
     self.state.selected()
   }
@@ -56,6 +53,8 @@ impl<T> StatefulList<T> {
       .and_then(move |i| self.items.get(i))
   }
   
+
+  #[allow(dead_code)]
   pub fn selected_mut(&mut self) -> Option<&mut T> {
     self
       .index()

@@ -7,14 +7,8 @@ use std::iter;
 use std::path::Path;
 use std::path::PathBuf;
 use tui::{
-  buffer::Buffer,
-  layout::Rect,
-  style::{Color, Modifier, Style},
-  text::Span,
-  text::Spans,
-  widgets::List,
-  widgets::ListItem,
-  widgets::StatefulWidget,
+  buffer::Buffer, layout::Rect, style::Style, text::Span, text::Spans, widgets::List,
+  widgets::ListItem, widgets::StatefulWidget,
 };
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Default)]
@@ -43,6 +37,7 @@ impl ExpandedPaths {
     self.expanded_paths.insert(PathBuf::from(path));
   }
 
+  #[allow(dead_code)]
   pub fn is_expanded(&self, path: &Path) -> bool {
     self.expanded_paths.contains(path)
   }
@@ -81,6 +76,7 @@ impl FileTreeState {
     self.expanded_paths.expand(path)
   }
 
+  #[allow(dead_code)]
   pub fn is_expanded(&self, path: &Path) -> bool {
     self.expanded_paths.is_expanded(path)
   }
@@ -153,6 +149,7 @@ impl FileTreeState {
   }
 
   /// Currently selected entry
+  #[allow(dead_code)]
   pub fn entry_mut(&mut self) -> &mut TreeEntry {
     let root = &mut self.root_entry;
     if let Some(line) = self.lines.selected_mut() {
@@ -174,7 +171,7 @@ impl FileTreeState {
 }
 
 pub struct FileTree<'a> {
-	cfg: &'a Config
+  cfg: &'a Config,
 }
 
 impl<'a> FileTree<'a> {
@@ -187,14 +184,8 @@ impl<'a> StatefulWidget for FileTree<'a> {
   type State = FileTreeState;
 
   fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-    let items: Vec<ListItem> = state
-      .lines
-      .items
-      .iter()
-      .map(|x| x.make_line())
-      .collect();
-    let list = List::new(items)
-      .highlight_style(self.cfg.highlight_style);
+    let items: Vec<ListItem> = state.lines.items.iter().map(|x| x.make_line()).collect();
+    let list = List::new(items).highlight_style(self.cfg.highlight_style);
     list.render(area, buf, &mut state.lines.state);
   }
 }
@@ -219,10 +210,24 @@ pub struct TreeEntryLine {
 impl TreeEntryLine {
   fn make_line(&self) -> ListItem {
     ListItem::new(Spans(
-      iter::once(Span::styled("  ".repeat(self.level), self.line.first().map(|(_, s)| s.clone()).unwrap_or(Style::default())))
-        .chain(self.line.iter().map(|(x, s)| Span::styled(x, s.clone())))
-        .collect(),
-    )).style(self.line.last().map(|(_, s)| s.clone()).unwrap_or(Style::default()))
+      iter::once(Span::styled(
+        "  ".repeat(self.level),
+        self
+          .line
+          .first()
+          .map(|(_, s)| s.clone())
+          .unwrap_or(Style::default()),
+      ))
+      .chain(self.line.iter().map(|(x, s)| Span::styled(x, s.clone())))
+      .collect(),
+    ))
+    .style(
+      self
+        .line
+        .last()
+        .map(|(_, s)| s.clone())
+        .unwrap_or(Style::default()),
+    )
   }
 }
 
@@ -335,13 +340,16 @@ impl TreeEntry {
         format!("{} {} ", arrow, icon)
       };
       let mainstyle = if self.is_dir {
-      	conf.dir_name_style
+        conf.dir_name_style
       } else {
         conf.file_name_style
       };
       TreeEntryLine {
         path: self.path.clone(),
-        line: vec![(prefix, conf.icon_style), (" ".to_string() + name, mainstyle)],
+        line: vec![
+          (prefix, conf.icon_style),
+          (" ".to_string() + name, mainstyle),
+        ],
         level,
       }
     })
@@ -352,7 +360,7 @@ impl TreeEntry {
     conf: &'a Config,
     level: usize,
   ) -> Box<dyn Iterator<Item = TreeEntryLine> + 'a> {
-  	let line = self.build_line(conf, level);
+    let line = self.build_line(conf, level);
     if line.is_some() && self.expanded {
       Box::new(
         line.into_iter().chain(
@@ -382,6 +390,7 @@ impl TreeEntry {
     return None;
   }
   /// Find the tree entry corresponding to a `TreeEntryLine`
+  #[allow(dead_code)]
   pub fn find_mut(&mut self, e: &TreeEntryLine) -> Option<&mut TreeEntry> {
     if e.path == self.path {
       return Some(self);

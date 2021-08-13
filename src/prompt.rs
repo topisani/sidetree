@@ -1,4 +1,4 @@
-use crate::commands::CommandQueue;
+use crate::commands::Command;
 use termion::event::Key;
 use tui::backend::Backend;
 use tui::layout::Rect;
@@ -10,8 +10,8 @@ use unicode_width::UnicodeWidthStr;
 
 pub trait Prompt {
   fn prompt_text(&self) -> &str;
-  fn on_submit(&mut self, cmds: &mut CommandQueue, input: &str);
-  fn on_cancel(&mut self, cmds: &mut CommandQueue);
+  fn on_submit(&mut self, input: &str) -> Option<Command>;
+  fn on_cancel(&mut self) -> Option<Command>;
 }
 
 struct PromptState {
@@ -27,35 +27,35 @@ impl PromptState {
     }
   }
   /// Returns true if the prompt should be exited
-  pub fn on_key(&mut self, cmds: &mut CommandQueue, key: Key) -> bool {
+  pub fn on_key(&mut self, key: Key) -> (bool, Option<Command>) {
     match key {
       Key::Char('\n') => {
-        self.submit(cmds);
-        true
+        (true, self.submit())
       }
       Key::Char(c) => {
         self.input.push(c);
-        false
+        (false, None)
       }
       Key::Backspace => {
         self.input.pop();
-        false
+        (false, None)
       }
       Key::Esc => {
-        self.cancel(cmds);
-        true
+        (true, self.cancel())
       }
-      _ => false,
+      _ => (false, None),
     }
   }
 
-  pub fn submit(&mut self, cmds: &mut CommandQueue) {
-    self.prompt.on_submit(cmds, self.input.as_str());
+  pub fn submit(&mut self) -> Option<Command> {
+    let cmd = self.prompt.on_submit(self.input.as_str());
     self.input.clear();
+    cmd
   }
-  pub fn cancel(&mut self, cmds: &mut CommandQueue) {
-    self.prompt.on_cancel(cmds);
+  pub fn cancel(&mut self) -> Option<Command>{
+    let cmd = self.prompt.on_cancel();
     self.input.clear();
+    cmd
   }
 
   pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect) {
@@ -104,7 +104,7 @@ impl StatusLine {
   }
   /// Whether the statusline should get key events
   pub fn has_focus(&self) -> bool {
-    if let Some(p) = &self.prompt_state {
+    if let Some(_) = &self.prompt_state {
       true
     } else {
       false
@@ -113,14 +113,16 @@ impl StatusLine {
 
   /// Handle a key
   /// Return true if the tree should be updated
-  pub fn on_key(&mut self, cmds: &mut CommandQueue, key: Key) -> bool {
+  pub fn on_key(&mut self, key: Key) -> (bool, Option<Command>) {
     if let Some(p) = &mut self.prompt_state {
-      if p.on_key(cmds, key) {
+      let (exit, cmd) = p.on_key(key);
+      if exit {
         self.prompt_state = None;
-        return true;
+        return (true, cmd);
       }
+      return (false, cmd);
     }
-    false
+    return (false, None);
   }
 
   pub fn prompt(&mut self, prompt: Box<dyn Prompt>) {
