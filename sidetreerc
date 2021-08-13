@@ -6,7 +6,7 @@
 
 set show_hidden false
 set quit_on_open false
-set open_cmd 'kcr open "${sidetree_entry}"'
+set open_cmd 'xdg-open'
 
 # Appearance ───────────────────────────────────────────────────────────────────
 
@@ -21,9 +21,13 @@ set highlight_style +r
 map <c-c> quit
 map H cd ..
 map L cd
-map ! shell 'nohup alacritty --class popup --working-directory "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
-map $ shell 'nohup tmux display-popup -d "${sidetree_entry}" -E < /dev/null > /dev/null 2>&1 &'
-map / shell 'kcr send cd "${sidetree_entry}"'
-map e shell 'kcr edit "${sidetree_entry}"'
-map x shell 'arc unarchive "${sidetree_entry}"'
-map m shell 'nohup mpv -no-terminal "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
+
+# Example Integrations ─────────────────────────────────────────────────────────
+
+# set open_cmd 'kcr open "${sidetree_entry}"'
+# map ! shell 'nohup alacritty --class popup --working-directory "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
+# map $ shell 'nohup tmux display-popup -d "${sidetree_entry}" -E < /dev/null > /dev/null 2>&1 &'
+# map / shell 'kcr send cd "${sidetree_entry}"'
+# map e shell 'kcr edit "${sidetree_entry}"'
+# map x shell 'arc unarchive "${sidetree_entry}"'
+# map m shell 'nohup mpv -no-terminal "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'

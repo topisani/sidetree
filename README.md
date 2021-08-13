@@ -28,38 +28,20 @@ This also requires [kcr](https://github.com/alexherbo2/kakoune.cr)
 
 ## Configuration
 
-Commands can be placed in `~/.config/sidetree/sidetreerc`, one command per line:
+Commands can be placed in `~/.config/sidetree/sidetreerc`:
 ```
-# sidetree
-# https://github.com/topisani/sidetree
-# https://github.com/topisani/sidetree/blob/master/sidetreerc
-
-# General ──────────────────────────────────────────────────────────────────────
-
 set show_hidden false
 set quit_on_open false
 set open_cmd 'kcr open "${sidetree_entry}"'
-
-# Appearance ───────────────────────────────────────────────────────────────────
 
 set file_icons true
 set icon_style darkgray
 set dir_name_style lightblue+b
 set file_name_style reset
 set highlight_style +r
-
-# Mappings ─────────────────────────────────────────────────────────────────────
-
-map <c-c> quit
-map H cd ..
-map L cd
-map ! shell 'nohup alacritty --class popup --working-directory "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
-map $ shell 'nohup tmux display-popup -d "${sidetree_entry}" -E < /dev/null > /dev/null 2>&1 &'
-map / shell 'kcr send cd "${sidetree_entry}"'
-map e shell 'kcr edit "${sidetree_entry}"'
-map x shell 'arc unarchive "${sidetree_entry}"'
-map m shell 'nohup mpv -no-terminal "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
 ```
+
+For more examples, see the provided `sidetreerc` file.
 
 ## Commands
 

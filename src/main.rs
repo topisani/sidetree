@@ -52,6 +52,8 @@ struct Opts {
   exec: Option<String>,
 }
 
+const DEFAULT_CONFIG: &'static str = include_str!("../sidetreerc");
+
 fn default_conf_file() -> PathBuf {
   let xdg = xdg::BaseDirectories::with_prefix("sidetree").unwrap();
   let conf_file = xdg
@@ -59,6 +61,11 @@ fn default_conf_file() -> PathBuf {
     .expect("Cannot create config directory");
   if !conf_file.exists() {
     File::create(&conf_file).expect("Cannot create config file");
+    std::fs::write(
+      &conf_file,
+      DEFAULT_CONFIG
+    )
+    .expect("Couldn't write default config file");
   }
   conf_file
 }
