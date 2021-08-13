@@ -352,10 +352,10 @@ impl TreeEntry {
     conf: &'a Config,
     level: usize,
   ) -> Box<dyn Iterator<Item = TreeEntryLine> + 'a> {
-    let self_line = std::iter::once(self).filter_map(move |s| s.build_line(conf, level));
-    if self.expanded {
+  	let line = self.build_line(conf, level);
+    if line.is_some() && self.expanded {
       Box::new(
-        self_line.chain(
+        line.into_iter().chain(
           self
             .children
             .iter()
@@ -364,7 +364,7 @@ impl TreeEntry {
         ),
       )
     } else {
-      Box::new(self_line)
+      Box::new(line.into_iter())
     }
   }
 

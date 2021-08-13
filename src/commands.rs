@@ -1,7 +1,9 @@
 use crate::keymap::parse_key;
 use combine::Parser;
+use std::collections::HashMap;
+use std::collections::VecDeque;
+use std::path::Path;
 use std::path::PathBuf;
-use std::{collections::VecDeque, path::Path};
 use termion::event::Key;
 
 pub struct CommandQueue {
@@ -24,6 +26,15 @@ impl CommandQueue {
   }
 }
 
+pub struct CmdManager {
+  cmds: HashMap<String, CmdBlock>,
+}
+
+pub enum Argument {
+  String(String),
+  ConfOpt(String),
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
   Quit,
@@ -34,6 +45,7 @@ pub enum Command {
   Set(String, String),
   Cd(Option<PathBuf>),
   MapKey(Key, Box<Command>),
+  // NamedCmd(String, Vec<String>)
 }
 
 type CmdBlock = Vec<Command>;
@@ -121,21 +133,13 @@ mod cmd_parser {
     }
     return true;
   }
-
+  
   fn arg<Input: Stream<Token = char>>() -> impl Parser<Input, Output = String> {
-    let word_char = || satisfy(is_word_char);
-    let word = || many1(word_char());
     let double_quotes = || between(char('"'), lex(char('"')), many(cmd_str_char('"')));
     let single_quotes = || between(char('\''), lex(char('\'')), many(cmd_str_char('\'')));
+    let word_char = || satisfy(is_word_char);
+    let word = || many1(word_char());
     choice!(double_quotes(), single_quotes(), word())
-  }
-
-  pub fn cmd<Input>() -> impl Parser<Input, Output = (String, Vec<String>)>
-  where
-    Input: Stream<Token = char>,
-    Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
-  {
-    lex(arg()).and(many(lex(arg())))
   }
 
   pub fn cmds<Input>() -> impl Parser<Input, Output = Vec<(String, Vec<String>)>>
@@ -174,9 +178,10 @@ mod test {
   use combine::StreamOnce;
 
   fn cmd_parse_test(input: &str) -> Result<(String, Vec<String>), <&str as StreamOnce>::Error> {
-    cmd_parser::cmd().parse(input).map(|((cmd, args), rem)| {
+    cmd_parser::cmds().parse(input).map(|(cmds, rem)| {
       assert!(rem.is_empty());
-      (cmd, args)
+      assert!(cmds.len() == 1);
+      cmds.first().unwrap().clone()
     })
   }
 
