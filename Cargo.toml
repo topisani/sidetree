@@ -18,3 +18,8 @@ xdg = "2.2.0"
 path-absolutize = "3.0.10"
 lazy_static = "1.4.0"
 toml = "0.5.8"
+
+[package.metadata.release]
+dev-version-ext = "dev"
+pre-release-commit-message = "release {{version}}"
+post-release-commit-message = "Released {{version}}, starting {{next_version}}"
