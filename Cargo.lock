@@ -249,7 +249,7 @@ dependencies = [
 
 [[package]]
 name = "sidetree"
-version = "0.5.0"
+version = "0.5.1-alpha.0"
 dependencies = [
  "clap",
  "combine",
