@@ -1,8 +1,9 @@
 use combine::parser::EasyParser;
 use tui::style::{Color, Modifier, Style};
+use config_macros::ConfParsable;
 
 // Config definition
-#[derive(Default)]
+#[derive(Default, ConfParsable)]
 pub struct Config {
   pub show_hidden: bool,
   pub open_cmd: String,
@@ -12,35 +13,6 @@ pub struct Config {
   pub dir_name_style: Style,
   pub file_name_style: Style,
   pub highlight_style: Style,
-}
-
-impl ConfTree for Config {
-  fn get_child(&self, name: &str) -> Result<&dyn ConfOpt, String> {
-    match name {
-      "open_cmd" => Ok(&self.open_cmd),
-      "show_hidden" => Ok(&self.show_hidden),
-      "quit_on_open" => Ok(&self.quit_on_open),
-      "file_icons" => Ok(&self.file_icons),
-      "icon_style" => Ok(&self.icon_style),
-      "dir_name_style" => Ok(&self.dir_name_style),
-      "file_name_style" => Ok(&self.file_name_style),
-      "highlight_style" => Ok(&self.highlight_style),
-      _ => Err(format!("unknown option {}", name)),
-    }
-  }
-  fn get_child_mut(&mut self, name: &str) -> Result<&mut dyn ConfOpt, String> {
-    match name {
-      "open_cmd" => Ok(&mut self.open_cmd),
-      "show_hidden" => Ok(&mut self.show_hidden),
-      "quit_on_open" => Ok(&mut self.quit_on_open),
-      "file_icons" => Ok(&mut self.file_icons),
-      "icon_style" => Ok(&mut self.icon_style),
-      "dir_name_style" => Ok(&mut self.dir_name_style),
-      "file_name_style" => Ok(&mut self.file_name_style),
-      "highlight_style" => Ok(&mut self.highlight_style),
-      _ => Err(format!("unknown option {}", name)),
-    }
-  }
 }
 
 impl Config {
@@ -55,16 +27,21 @@ impl Config {
 
 // Lib functions
 
+trait ConfOpt {
+  fn set_opt(&mut self, val: &str) -> Result<(), String>;
+  fn get_opt(&self) -> String;
+}
+
+trait ConfTree {
+  fn get_child(&self, name: &str) -> Result<&dyn ConfOpt, String>;
+  fn get_child_mut(&mut self, name: &str) -> Result<&mut dyn ConfOpt, String>;
+}
+
 fn parse_opt<T: std::str::FromStr>(val: &str) -> Result<T, String> {
   match val.parse::<T>() {
     Ok(res) => Ok(res),
     Err(_) => Err("Could not parse option value".to_string()),
   }
-}
-
-trait ConfOpt {
-  fn set_opt(&mut self, val: &str) -> Result<(), String>;
-  fn get_opt(&self) -> String;
 }
 
 impl ConfOpt for bool {
@@ -170,11 +147,6 @@ impl ConfOpt for Style {
     }
     r
   }
-}
-
-trait ConfTree {
-  fn get_child(&self, name: &str) -> Result<&dyn ConfOpt, String>;
-  fn get_child_mut(&mut self, name: &str) -> Result<&mut dyn ConfOpt, String>;
 }
 
 mod style_parser {

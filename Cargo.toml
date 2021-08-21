@@ -18,6 +18,19 @@ xdg = "2.2.0"
 path-absolutize = "3.0.10"
 lazy_static = "1.4.0"
 toml = "0.5.8"
+syn = "1.0.75"  
+quote = "1.0.9" 
+proc-macro2 = "1.0.28"
+
+# https://stackoverflow.com/questions/65813638/how-to-use-proc-macro-in-normal-module
+[lib]
+name = "config_macros"
+path = "src/config_macros.rs"
+proc-macro = true
+
+[[bin]]
+name = "sidetree"
+path = "src/main.rs"
 
 [package.metadata.release]
 dev-version-ext = "dev"
