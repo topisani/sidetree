@@ -305,14 +305,14 @@ mod tests {
     );
     assert_eq!(
       Style::default()
-        .fg(Yellow)
+        .fg(Indexed(1))
         .bg(Rgb(0x00, 0x11, 0xFF))
         .add_modifier(Modifier::BOLD)
         .remove_modifier(Modifier::UNDERLINED)
         .remove_modifier(Modifier::ITALIC)
         .get_opt()
         .as_str(),
-      "yellow,rgb:0011FF+b-iu"
+      "color1,rgb:0011FF+b-iu"
     );
   }
 }

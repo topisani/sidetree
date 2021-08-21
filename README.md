@@ -143,6 +143,9 @@ TODO
  - [x] Better script parsing
    - [x] Comments
    - [x] Blocks
+   - [ ] percent-strings
+   - [ ] Expansions
+ - [x] Auto reflection of configs
  - [ ] Custom commands and aliases
  - [ ] Better prompt keybinds and cursor movements 
  - [ ] Git integration

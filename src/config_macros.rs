@@ -35,23 +35,19 @@ fn conf_tree(ast: &syn::DeriveInput) -> syn::Result<TokenStream> {
     .map(|ident| ident.to_string())
     .collect::<Vec<_>>();
 
-  let opt_comma = if fields.is_empty() {
-    quote! {}
-  } else {
-    quote! {,}
-  };
-
   Ok(quote! {
     impl #impl_generics crate::config::ConfTree for #name #ty_generics #where_clause {
+    
       fn get_child(&self, name: &str) -> Result<&dyn crate::config::ConfOpt, String> {
         match name {
-          #(#field_strs => Ok(&self.#field_names)),* #opt_comma
+          #(#field_strs => Ok(&self.#field_names),)*
           _ => Err(format!("unknown option {}", name)),
         }
       }
+      
       fn get_child_mut(&mut self, name: &str) -> Result<&mut dyn crate::config::ConfOpt, String> {
         match name {
-          #(#field_strs => Ok(&mut self.#field_names)),* #opt_comma
+          #(#field_strs => Ok(&mut self.#field_names),)*
           _ => Err(format!("unknown option {}", name)),
         }
       }

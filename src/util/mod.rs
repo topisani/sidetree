@@ -25,9 +25,7 @@ impl<T> StatefulList<T> {
 
   pub fn next(&mut self) {
     if let Some(i) = self.state.selected() {
-      if i + 1 < self.items.len() {
-        self.state.select(Some(i + 1));
-      }
+      self.state.select(Some((i + 1).min(self.items.len() - 1)));
     } else {
       self.state.select(Some(0))
     }
@@ -35,9 +33,7 @@ impl<T> StatefulList<T> {
 
   pub fn previous(&mut self) {
     if let Some(i) = self.state.selected() {
-      if i > 0 {
-        self.state.select(Some(i - 1));
-      }
+      self.state.select(Some((i - 1).max(0)));
     } else {
       self.state.select(Some(0))
     }
