@@ -88,10 +88,10 @@ impl App {
       Key::Char('q') => {
         self.exit = true;
       }
-      Key::Char('j') => {
+      Key::Char('j') | Key::Down => {
         self.tree.select_next();
       }
-      Key::Char('k') => {
+      Key::Char('k') | Key::Up => {
         self.tree.select_prev();
       }
       Key::Char('\n') => {
@@ -102,7 +102,7 @@ impl App {
           self.run_command(&Command::Open(None))
         }
       }
-      Key::Char('l') => {
+      Key::Char('l') | Key::Right => {
         let entry = self.tree.entry().clone();
         if entry.is_dir {
           if !entry.is_expanded() {
@@ -112,7 +112,7 @@ impl App {
           }
         }
       }
-      Key::Char('h') => {
+      Key::Char('h') | Key::Left => {
         let entry = self.tree.entry().clone();
         if entry.is_expanded() {
           self.tree.collapse(&entry.path);
