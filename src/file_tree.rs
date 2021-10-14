@@ -282,7 +282,11 @@ impl TreeEntry {
     self.children.sort_by(|a, b| b.is_dir.cmp(&a.is_dir));
   }
 
-  fn should_show_item(&self, conf: &Config, _level: usize) -> bool {
+  fn should_show_item(&self, conf: &Config, level: usize) -> bool {
+    // Always show root dir
+    if level == 0 {
+      return true;
+    }
     if !conf.show_hidden
       && self
         .path
@@ -343,6 +347,11 @@ impl TreeEntry {
         conf.dir_name_style
       } else {
         conf.file_name_style
+      };
+      let mainstyle = if self.is_link {
+        mainstyle.patch(conf.link_style)
+      } else {
+        mainstyle
       };
       TreeEntryLine {
         path: self.path.clone(),

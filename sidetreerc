@@ -15,6 +15,7 @@ set icon_style darkgray
 set dir_name_style lightblue+b
 set file_name_style reset
 set highlight_style +r
+set link_style +i
 
 # Mappings ─────────────────────────────────────────────────────────────────────
 

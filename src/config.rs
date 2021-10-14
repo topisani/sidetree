@@ -13,6 +13,7 @@ pub struct Config {
   pub dir_name_style: Style,
   pub file_name_style: Style,
   pub highlight_style: Style,
+  pub link_style: Style,
 }
 
 impl Config {
