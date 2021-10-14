@@ -215,6 +215,10 @@ impl App {
         "sidetree_entry",
         self.tree.entry().path.to_str().unwrap_or(""),
       )
+      .env(
+        "sidetree_dir",
+        self.tree.current_dir().to_str().unwrap_or(""),
+      )
       .output();
     match output {
       Err(err) => {

@@ -168,6 +168,15 @@ impl FileTreeState {
   fn rebuild_list(&mut self, cfg: &Config) {
     self.lines.items = self.root_entry.build_lines_rec(cfg, 0).collect();
   }
+
+  pub fn current_dir(&self) -> PathBuf {
+    let sel = self.entry();
+    if sel.is_dir {
+      sel.path.clone()
+    } else {
+      sel.path.parent().map(PathBuf::from).unwrap_or(PathBuf::from("/"))
+    }
+  }
 }
 
 pub struct FileTree<'a> {
@@ -287,14 +296,14 @@ impl TreeEntry {
     if level == 0 {
       return true;
     }
-    if !conf.show_hidden
+    let hidden = !conf.show_hidden
       && self
         .path
         .file_name()
         .and_then(|s| s.to_str())
         .map(|x| x.starts_with("."))
-        .unwrap_or(false)
-    {
+        .unwrap_or(false);
+    if hidden {
       return false;
     }
     return true;
