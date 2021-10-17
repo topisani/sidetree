@@ -39,6 +39,7 @@ set icon_style darkgray
 set dir_name_style lightblue+b
 set file_name_style reset
 set highlight_style +r
+set link_style cyan+b
 ```
 
 For more examples, see the provided `sidetreerc` file.
@@ -80,6 +81,14 @@ Keys are formatted as one of the following:
  - One of the special named keys that do not support modifiers: `esc`, `backtab`,
    `backspace`, `del`, `home`, `end`, `up`, `down`, `left`, `right`, `insert`,
    `pageup`, `pagedown`.
+
+## Expansions
+
+### `sidetree_entry`
+Path to selected entry.
+
+### `sidetree_dir`
+Path to selected directory.
 
 ## Options
 Options are set using the `set [option] [value]` command
@@ -127,6 +136,7 @@ Example styles: `blue,black+bu-i`, `,red`, `reset,reset+r`, `-B`
 #### `dir_name_style: Style`: Style of directory names
 #### `file_name_style: Style`: Style of non-directory names
 #### `highlight_style: Style`: Style of the highlighted entry
+#### `link_style`: Style of symlink names
 This style is applied on top of the existing styles, so `+r` could be a good
 option, or alternatively `blue,reset+r`.
 

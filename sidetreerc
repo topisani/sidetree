@@ -15,7 +15,7 @@ set icon_style darkgray
 set dir_name_style lightblue+b
 set file_name_style reset
 set highlight_style +r
-set link_style +i
+set link_style cyan+b
 
 # Mappings ─────────────────────────────────────────────────────────────────────
 
@@ -26,9 +26,9 @@ map L cd
 # Example Integrations ─────────────────────────────────────────────────────────
 
 # set open_cmd 'kcr open "${sidetree_entry}"'
-# map ! shell 'nohup alacritty --class popup --working-directory "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
-# map $ shell 'nohup tmux display-popup -d "${sidetree_entry}" -E < /dev/null > /dev/null 2>&1 &'
-# map / shell 'kcr send cd "${sidetree_entry}"'
+# map ! shell 'nohup alacritty --class popup --working-directory "${sidetree_dir}" < /dev/null > /dev/null 2>&1 &'
+# map $ shell 'nohup tmux display-popup -d "${sidetree_dir}" -E < /dev/null > /dev/null 2>&1 &'
+# map / shell 'kcr send cd "${sidetree_dir}"'
 # map e shell 'kcr edit "${sidetree_entry}"'
 # map x shell 'arc unarchive "${sidetree_entry}"'
 # map m shell 'nohup mpv -no-terminal "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
