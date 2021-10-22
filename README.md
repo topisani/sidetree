@@ -21,7 +21,7 @@ cargo install sidetree
 Very simple integration with [kakoune](https://github.com/mawww/kakoune) in tmux:
 
 ```kak
-map -docstring 'file explorer' global normal <c-e> ':connect panel sidetree --select %val{buffile}<ret>'
+map -docstring 'file explorer' global normal <c-e> ': connect terminal-panel sidetree --select %val{buffile}<ret>'
 ```
 
 This also requires [kcr](https://github.com/alexherbo2/kakoune.cr)
