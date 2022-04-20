@@ -13,7 +13,7 @@ use crate::commands::Command;
 use crate::{app::App, cache::Cache};
 use std::{fs::File, path::PathBuf};
 
-use clap::Clap;
+use clap::Parser;
 use commands::parse_cmds;
 use std::error::Error;
 use std::io;
@@ -27,7 +27,7 @@ use crate::util::event::{Event, Events};
 
 extern crate combine;
 
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap(
   version = env!("CARGO_PKG_VERSION"),
   author = env!("CARGO_PKG_AUTHORS"),
