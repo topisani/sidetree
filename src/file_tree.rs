@@ -349,7 +349,7 @@ impl TreeEntry {
         } else {
           ' '
         };
-        format!("{} ", arrow)
+        format!("{}", arrow)
       };
       let mainstyle = if self.is_dir {
         conf.dir_name_style
