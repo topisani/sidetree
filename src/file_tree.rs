@@ -340,17 +340,16 @@ impl TreeEntry {
     }
     self.path.file_name().and_then(|s| s.to_str()).map(|name| {
       let prefix = {
-        let icon = self.icon(conf);
         let arrow = if self.is_dir {
           if self.expanded {
-            '▾'
+            '-'
           } else {
-            '▸'
+            '+'
           }
         } else {
           ' '
         };
-        format!("{} {} ", arrow, icon)
+        format!("{} ", arrow)
       };
       let mainstyle = if self.is_dir {
         conf.dir_name_style
