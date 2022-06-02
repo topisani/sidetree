@@ -10,7 +10,7 @@ use crate::prompt::StatusLine;
 use tui::backend::Backend;
 
 use std::path::{Path, PathBuf};
-use termion::event::Key;
+use termion::event::{Key, MouseEvent};
 use tui::layout::{Constraint, Direction, Layout};
 use tui::Frame;
 
@@ -67,6 +67,13 @@ impl App {
 
   pub fn tick(&mut self) {
     self.update();
+  }
+
+  pub fn on_mouse(&mut self, me: MouseEvent) -> Option<()> {
+    if let MouseEvent::Press(_, _x, y) = me {
+      self.tree.select_nth(y.into());
+    };
+    Some(())
   }
 
   pub fn on_key(&mut self, k: Key) -> Option<()> {
@@ -136,6 +143,7 @@ impl App {
     }
     Some(())
   }
+
   pub fn run_commands(&mut self, cmds: &Vec<Command>) {
     for c in cmds {
       self.run_command(c);

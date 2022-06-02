@@ -97,6 +97,10 @@ impl FileTreeState {
     }
   }
 
+  pub fn select_nth(&mut self, n: usize) {
+    self.lines.nth(n)
+  }
+
   pub fn select_next(&mut self) {
     self.lines.next()
   }

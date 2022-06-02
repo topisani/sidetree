@@ -3,18 +3,19 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use termion::event::Key;
+use termion::event::{Event as TEvent, Key, MouseEvent};
 use termion::input::TermRead;
 
-pub enum Event<I> {
-  Input(I),
+pub enum Event<A, B> {
+  Key(A),
+  Mouse(B),
   Tick,
 }
 
 /// A small event handler that wrap termion input and tick events. Each event
 /// type is handled in its own thread and returned to a common `Receiver`
 pub struct Events {
-  rx: mpsc::Receiver<Event<Key>>,
+  rx: mpsc::Receiver<Event<Key, MouseEvent>>,
   _input_handle: thread::JoinHandle<()>,
   _tick_handle: thread::JoinHandle<()>,
 }
@@ -45,11 +46,22 @@ impl Events {
       let tx = tx.clone();
       thread::spawn(move || {
         let stdin = io::stdin();
-        for evt in stdin.keys() {
-          if let Ok(key) = evt {
-            if let Err(err) = tx.send(Event::Input(key)) {
-              eprintln!("{}", err);
-              return;
+        for evt in stdin.events() {
+          if let Ok(res) = evt {
+            match res {
+              TEvent::Key(key) => {
+                if let Err(err) = tx.send(Event::Key(key)) {
+                  eprintln!("{}", err);
+                  return;
+                }
+              },
+              TEvent::Mouse(mouse) => {
+                if let Err(err) = tx.send(Event::Mouse(mouse)) {
+                  eprintln!("{}", err);
+                  return;
+                }
+              },
+              _ => ()
             }
           }
         }
@@ -70,7 +82,7 @@ impl Events {
     }
   }
 
-  pub fn next(&self) -> Result<Event<Key>, mpsc::RecvError> {
+  pub fn next(&self) -> Result<Event<Key, MouseEvent>, mpsc::RecvError> {
     self.rx.recv()
   }
 }
