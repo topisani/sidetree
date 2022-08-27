@@ -27,8 +27,10 @@ map L cd
 
 # set open_cmd 'kcr open "${sidetree_entry}"'
 # map ! shell 'nohup alacritty --class popup --working-directory "${sidetree_dir}" < /dev/null > /dev/null 2>&1 &'
-# map $ shell 'nohup tmux display-popup -d "${sidetree_dir}" -E < /dev/null > /dev/null 2>&1 &'
+# map $ shell 'nohup tmux display-popup -w 90% -h 90% -d "${sidetree_dir}" -E < /dev/null > /dev/null 2>&1 &'
 # map / shell 'kcr send cd "${sidetree_dir}"'
 # map e shell 'kcr edit "${sidetree_entry}"'
+# map v shell 'nohup tmux display-popup -w 90% -h 90% -E bat --paging=always "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
+# map V shell 'nohup alacritty --class popup --command bat --paging=always "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
 # map x shell 'arc unarchive "${sidetree_entry}"'
 # map m shell 'nohup mpv -no-terminal "${sidetree_entry}" < /dev/null > /dev/null 2>&1 &'
