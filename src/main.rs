@@ -107,9 +107,12 @@ fn main() -> Result<(), Box<dyn Error>> {
       app.draw(f);
     })?;
 
-    if let Event::Input(input) = events.next()? {
-      app.on_key(input);
+    match events.next()? {
+      Event::Key(key) => { app.on_key(key); },
+      Event::Mouse(mouse) => { app.on_mouse(mouse); },
+      _ => ()
     }
+
     app.tick();
     if app.exit {
       break;

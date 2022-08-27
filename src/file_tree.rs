@@ -97,6 +97,10 @@ impl FileTreeState {
     }
   }
 
+  pub fn select_nth(&mut self, n: usize) {
+    self.lines.nth(n)
+  }
+
   pub fn select_next(&mut self) {
     self.lines.next()
   }
@@ -340,17 +344,16 @@ impl TreeEntry {
     }
     self.path.file_name().and_then(|s| s.to_str()).map(|name| {
       let prefix = {
-        let icon = self.icon(conf);
         let arrow = if self.is_dir {
           if self.expanded {
-            '▾'
+            '-'
           } else {
-            '▸'
+            '+'
           }
         } else {
           ' '
         };
-        format!("{} {} ", arrow, icon)
+        format!("{}", arrow)
       };
       let mainstyle = if self.is_dir {
         conf.dir_name_style

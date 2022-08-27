@@ -23,6 +23,14 @@ impl<T> StatefulList<T> {
     }
   }
 
+  pub fn nth(&mut self, n: usize) {
+    if let Some(i) = self.state.selected() {
+      self.state.select(Some((n).min(self.items.len() - 1)));
+    } else {
+      self.state.select(Some(0))
+    }
+  }
+
   pub fn next(&mut self) {
     if let Some(i) = self.state.selected() {
       self.state.select(Some((i + 1).min(self.items.len() - 1)));
