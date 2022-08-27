@@ -75,7 +75,7 @@ impl FileTreeState {
   pub fn expand(&mut self, path: &Path) {
     self.expanded_paths.expand(path)
   }
-
+  
   #[allow(dead_code)]
   pub fn is_expanded(&self, path: &Path) -> bool {
     self.expanded_paths.is_expanded(path)
@@ -152,6 +152,11 @@ impl FileTreeState {
     self.lines.selected()
   }
 
+  /// Currently selected line index
+  pub fn selected_idx(&self) -> Option<usize> {
+    self.lines.index()
+  }
+
   /// Currently selected entry
   #[allow(dead_code)]
   pub fn entry_mut(&mut self) -> &mut TreeEntry {
@@ -178,7 +183,11 @@ impl FileTreeState {
     if sel.is_dir {
       sel.path.clone()
     } else {
-      sel.path.parent().map(PathBuf::from).unwrap_or(PathBuf::from("/"))
+      sel
+        .path
+        .parent()
+        .map(PathBuf::from)
+        .unwrap_or(PathBuf::from("/"))
     }
   }
 }
@@ -344,16 +353,17 @@ impl TreeEntry {
     }
     self.path.file_name().and_then(|s| s.to_str()).map(|name| {
       let prefix = {
+        let icon = self.icon(conf);
         let arrow = if self.is_dir {
           if self.expanded {
-            '-'
+            '▾'
           } else {
-            '+'
+            '▸'
           }
         } else {
           ' '
         };
-        format!("{}", arrow)
+        format!("{arrow} {icon}")
       };
       let mainstyle = if self.is_dir {
         conf.dir_name_style

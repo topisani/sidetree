@@ -7,6 +7,7 @@ use crate::file_tree::{FileTree, FileTreeState};
 use crate::keymap::KeyMap;
 use crate::prompt::Prompt;
 use crate::prompt::StatusLine;
+use termion::event::MouseButton;
 use tui::backend::Backend;
 
 use std::path::{Path, PathBuf};
@@ -70,8 +71,29 @@ impl App {
   }
 
   pub fn on_mouse(&mut self, me: MouseEvent) -> Option<()> {
-    if let MouseEvent::Press(_, _x, y) = me {
-      self.tree.select_nth(y.into());
+    if let MouseEvent::Press(button, _x, y) = me {
+      match button {
+        MouseButton::Left | MouseButton::Right => {
+          let line = (y - 1) as usize;
+          if self.tree.selected_idx() == Some(line) {
+            let entry = self.tree.entry().clone();
+            if entry.is_dir {
+              self.tree.toggle_expanded(&entry.path);
+            } else {
+              self.run_command(&Command::Open(None))
+            }
+          } else {
+            self.tree.select_nth(line);
+          }
+        }
+        MouseButton::WheelDown => {
+          self.tree.select_next();
+        }
+        MouseButton::WheelUp => {
+          self.tree.select_prev();
+        }
+        _ => {}
+      }
     };
     Some(())
   }
