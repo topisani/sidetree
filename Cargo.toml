@@ -1,6 +1,6 @@
 [package]
 name = "sidetree"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Tobias Pisani <topisani@hamsterpoison.com>"]
 edition = "2018"
 description = "TUI file tree for usage with terminal text editors"
