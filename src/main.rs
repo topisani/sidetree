@@ -1,4 +1,3 @@
-#![feature(generators, generator_trait)]
 mod app;
 mod cache;
 mod commands;
@@ -34,6 +33,10 @@ extern crate combine;
 )]
 /// An interactive file tree meant to be used as a side panel for terminal text editors
 struct Opts {
+  /// The base directory to open sidetree to
+  #[clap(default_value = ".")]
+  directory: PathBuf,
+
   /// Set a config file to use. By default uses $XDG_CONFIG_DIR/sidetree/sidetreerc
   #[clap(short, long)]
   config: Option<PathBuf>,
@@ -52,7 +55,7 @@ struct Opts {
   exec: Option<String>,
 }
 
-const DEFAULT_CONFIG: &'static str = include_str!("../sidetreerc");
+const DEFAULT_CONFIG: &str = include_str!("../sidetreerc");
 
 fn default_conf_file() -> PathBuf {
   let xdg = xdg::BaseDirectories::with_prefix("sidetree").unwrap();
@@ -61,11 +64,7 @@ fn default_conf_file() -> PathBuf {
     .expect("Cannot create config directory");
   if !conf_file.exists() {
     File::create(&conf_file).expect("Cannot create config file");
-    std::fs::write(
-      &conf_file,
-      DEFAULT_CONFIG
-    )
-    .expect("Couldn't write default config file");
+    std::fs::write(&conf_file, DEFAULT_CONFIG).expect("Couldn't write default config file");
   }
   conf_file
 }
@@ -96,6 +95,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     app.run_commands(&parse_cmds(&opts.exec.unwrap())?)
   }
 
+  app.tree.change_root(&app.config, opts.directory);
+
   if let Some(path) = opts.select {
     app.tree.expand_to_path(&path);
     app.tree.update(&app.config);
@@ -108,9 +109,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     })?;
 
     match events.next()? {
-      Event::Key(key) => { app.on_key(key); },
-      Event::Mouse(mouse) => { app.on_mouse(mouse); },
-      _ => ()
+      Event::Key(key) => {
+        app.on_key(key);
+      }
+      Event::Mouse(mouse) => {
+        app.on_mouse(mouse);
+      }
+      _ => (),
     }
 
     app.tick();
