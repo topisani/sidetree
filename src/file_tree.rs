@@ -75,7 +75,7 @@ impl FileTreeState {
   pub fn expand(&mut self, path: &Path) {
     self.expanded_paths.expand(path)
   }
-  
+
   #[allow(dead_code)]
   pub fn is_expanded(&self, path: &Path) -> bool {
     self.expanded_paths.is_expanded(path)
@@ -326,24 +326,18 @@ impl TreeEntry {
   fn icon(&self, conf: &Config) -> char {
     if conf.file_icons {
       icons::icon_for_file(self.path.as_path())
-    } else {
-      if self.is_dir {
-        if self.expanded {
-          ''
-        } else {
-          if self.is_link {
-            ''
-          } else {
-            ''
-          }
-        }
+    } else if self.is_dir {
+      if self.expanded {
+        ''
+      } else if self.is_link {
+        ''
       } else {
-        if self.is_link {
-          ''
-        } else {
-          ''
-        }
+        ''
       }
+    } else if self.is_link {
+      ''
+    } else {
+      ''
     }
   }
 
@@ -379,7 +373,7 @@ impl TreeEntry {
         path: self.path.clone(),
         line: vec![
           (prefix, conf.icon_style),
-          (" ".to_string() + name, mainstyle),
+          ("  ".to_string() + name, mainstyle),
         ],
         level,
       }
@@ -398,8 +392,7 @@ impl TreeEntry {
           self
             .children
             .iter()
-            .map(move |n| n.build_lines_rec(conf, level + 1))
-            .flatten(),
+            .flat_map(move |n| n.build_lines_rec(conf, level + 1)),
         ),
       )
     } else {
@@ -418,7 +411,7 @@ impl TreeEntry {
         return res;
       }
     }
-    return None;
+    None
   }
   /// Find the tree entry corresponding to a `TreeEntryLine`
   #[allow(dead_code)]
@@ -432,7 +425,7 @@ impl TreeEntry {
         return res;
       }
     }
-    return None;
+    None
   }
 
   /// Get the cached variable of whether this entry is expanded.

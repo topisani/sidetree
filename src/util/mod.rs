@@ -24,11 +24,7 @@ impl<T> StatefulList<T> {
   }
 
   pub fn nth(&mut self, n: usize) {
-    if let Some(i) = self.state.selected() {
-      self.state.select(Some((n).min(self.items.len() - 1)));
-    } else {
-      self.state.select(Some(0))
-    }
+    self.state.select(Some((n).min(self.items.len() - 1)));
   }
 
   pub fn next(&mut self) {
@@ -52,17 +48,12 @@ impl<T> StatefulList<T> {
   }
 
   pub fn selected(&self) -> Option<&T> {
-    self
-      .index()
-      .and_then(move |i| self.items.get(i))
+    self.index().and_then(move |i| self.items.get(i))
   }
-  
 
   #[allow(dead_code)]
   pub fn selected_mut(&mut self) -> Option<&mut T> {
-    self
-      .index()
-      .and_then(move |i| self.items.get_mut(i))
+    self.index().and_then(move |i| self.items.get_mut(i))
   }
 
   pub fn select_index(&mut self, index: usize) {

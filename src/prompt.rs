@@ -29,9 +29,7 @@ impl PromptState {
   /// Returns true if the prompt should be exited
   pub fn on_key(&mut self, key: Key) -> (bool, Option<Command>) {
     match key {
-      Key::Char('\n') => {
-        (true, self.submit())
-      }
+      Key::Char('\n') => (true, self.submit()),
       Key::Char(c) => {
         self.input.push(c);
         (false, None)
@@ -40,9 +38,7 @@ impl PromptState {
         self.input.pop();
         (false, None)
       }
-      Key::Esc => {
-        (true, self.cancel())
-      }
+      Key::Esc => (true, self.cancel()),
       _ => (false, None),
     }
   }
@@ -52,7 +48,7 @@ impl PromptState {
     self.input.clear();
     cmd
   }
-  pub fn cancel(&mut self) -> Option<Command>{
+  pub fn cancel(&mut self) -> Option<Command> {
     let cmd = self.prompt.on_cancel();
     self.input.clear();
     cmd
@@ -104,11 +100,7 @@ impl StatusLine {
   }
   /// Whether the statusline should get key events
   pub fn has_focus(&self) -> bool {
-    if let Some(_) = &self.prompt_state {
-      true
-    } else {
-      false
-    }
+    self.prompt_state.is_some()
   }
 
   /// Handle a key
@@ -118,11 +110,10 @@ impl StatusLine {
       let (exit, cmd) = p.on_key(key);
       if exit {
         self.prompt_state = None;
-        return (true, cmd);
       }
-      return (false, cmd);
+      return (exit, cmd);
     }
-    return (false, None);
+    (false, None)
   }
 
   pub fn prompt(&mut self, prompt: Box<dyn Prompt>) {
