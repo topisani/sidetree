@@ -22,7 +22,7 @@ struct PromptState {
 impl PromptState {
   pub fn new(prompt: Box<dyn Prompt>) -> PromptState {
     PromptState {
-      prompt: prompt,
+      prompt,
       input: String::new(),
     }
   }

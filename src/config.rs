@@ -1,6 +1,6 @@
 use combine::parser::EasyParser;
-use tui::style::{Color, Modifier, Style};
 use config_macros::ConfParsable;
+use tui::style::{Color, Modifier, Style};
 
 // Config definition
 #[derive(Default, ConfParsable)]
@@ -133,11 +133,13 @@ impl ConfOpt for Style {
     let am = mod_to_char(self.add_modifier);
     let sm = mod_to_char(self.sub_modifier);
     let mut r = String::new();
-    fg.map(|fg| r += fg.as_str());
-    bg.map(|bg| {
+    if let Some(fg) = fg {
+      r += fg.as_str()
+    }
+    if let Some(bg) = bg {
       r += ",";
       r += bg.as_str()
-    });
+    }
     if !am.is_empty() {
       r += "+";
       r += am.as_str();
@@ -173,9 +175,11 @@ mod style_parser {
       string("color")
         .with(many1(digit()))
         .and_then(|x: String| {
-          u8::from_str_radix(x.as_str(), 10).map_err(|_| error::UnexpectedParse::Unexpected)
+          x.as_str()
+            .parse::<u8>()
+            .map_err(|_| error::UnexpectedParse::Unexpected)
         })
-        .map(|i| Color::Indexed(i))
+        .map(Color::Indexed)
     };
     let named_color = || {
       many1(letter()).and_then(|x: String| match x.as_str() {
@@ -218,7 +222,7 @@ mod style_parser {
     many1(modifier()).map(|x: Vec<_>| {
       let mut r = Modifier::empty();
       for m in x {
-        r = r | m;
+        r |= m;
       }
       r
     })
@@ -231,10 +235,18 @@ mod style_parser {
       .and(optional(attempt(token('-').with(modifiers()))))
       .map(|(((fg, bg), add_mods), sub_mods)| {
         let mut res = Style::default();
-        fg.map(|fg| res = res.fg(fg));
-        bg.map(|bg| res = res.bg(bg));
-        add_mods.map(|m| res = res.add_modifier(m));
-        sub_mods.map(|m| res = res.remove_modifier(m));
+        if let Some(fg) = fg {
+          res = res.fg(fg);
+        }
+        if let Some(bg) = bg {
+          res = res.bg(bg);
+        }
+        if let Some(m) = add_mods {
+          res = res.add_modifier(m);
+        }
+        if let Some(m) = sub_mods {
+          res = res.remove_modifier(m);
+        }
         res
       })
   }

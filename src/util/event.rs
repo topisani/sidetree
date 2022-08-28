@@ -46,23 +46,21 @@ impl Events {
       let tx = tx.clone();
       thread::spawn(move || {
         let stdin = io::stdin();
-        for evt in stdin.events() {
-          if let Ok(res) = evt {
-            match res {
-              TEvent::Key(key) => {
-                if let Err(err) = tx.send(Event::Key(key)) {
-                  eprintln!("{}", err);
-                  return;
-                }
-              },
-              TEvent::Mouse(mouse) => {
-                if let Err(err) = tx.send(Event::Mouse(mouse)) {
-                  eprintln!("{}", err);
-                  return;
-                }
-              },
-              _ => ()
+        for evt in stdin.events().flatten() {
+          match evt {
+            TEvent::Key(key) => {
+              if let Err(err) = tx.send(Event::Key(key)) {
+                eprintln!("{}", err);
+                return;
+              }
             }
+            TEvent::Mouse(mouse) => {
+              if let Err(err) = tx.send(Event::Mouse(mouse)) {
+                eprintln!("{}", err);
+                return;
+              }
+            }
+            _ => (),
           }
         }
       })

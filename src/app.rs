@@ -190,7 +190,7 @@ impl App {
           self.quit();
         }
       }
-      CmdStr(cmd) => match parse_cmds(&cmd) {
+      CmdStr(cmd) => match parse_cmds(cmd) {
         Ok(cmds) => self.run_commands(&cmds),
         Err(msg) => self.error(msg.as_str()),
       },
@@ -213,7 +213,7 @@ impl App {
         }
       }
       MapKey(key, cmd) => {
-        self.keymap.add_mapping(key.clone(), (**cmd).clone());
+        self.keymap.add_mapping(*key, (**cmd).clone());
       }
     }
     self.update();
@@ -231,7 +231,7 @@ impl App {
     Ok(())
   }
 
-  fn run_shell<'a>(&mut self, cmd: &str) {
+  fn run_shell(&mut self, cmd: &str) {
     let output = std::process::Command::new("sh")
       .arg("-c")
       .arg(cmd)

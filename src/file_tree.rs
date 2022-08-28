@@ -19,9 +19,7 @@ pub struct ExpandedPaths {
 
 impl ExpandedPaths {
   pub fn extend(&mut self, x: &ExpandedPaths) {
-    self
-      .expanded_paths
-      .extend(x.expanded_paths.iter().map(|x| x.clone()));
+    self.expanded_paths.extend(x.expanded_paths.iter().cloned());
   }
 
   pub fn toggle_expanded(&mut self, path: &Path) {
@@ -163,12 +161,12 @@ impl FileTreeState {
     let root = &mut self.root_entry;
     if let Some(line) = self.lines.selected_mut() {
       if let Some(entry) = root.find_mut(line) {
-        return entry;
+        entry
       } else {
         panic!()
       }
     } else {
-      return root;
+      root
     }
   }
 
@@ -187,7 +185,7 @@ impl FileTreeState {
         .path
         .parent()
         .map(PathBuf::from)
-        .unwrap_or(PathBuf::from("/"))
+        .unwrap_or_else(|| PathBuf::from("/"))
     }
   }
 }
@@ -234,22 +232,12 @@ impl TreeEntryLine {
     ListItem::new(Spans(
       iter::once(Span::styled(
         "  ".repeat(self.level),
-        self
-          .line
-          .first()
-          .map(|(_, s)| s.clone())
-          .unwrap_or(Style::default()),
+        self.line.first().map(|(_, s)| *s).unwrap_or_default(),
       ))
-      .chain(self.line.iter().map(|(x, s)| Span::styled(x, s.clone())))
+      .chain(self.line.iter().map(|(x, s)| Span::styled(x, *s)))
       .collect(),
     ))
-    .style(
-      self
-        .line
-        .last()
-        .map(|(_, s)| s.clone())
-        .unwrap_or(Style::default()),
-    )
+    .style(self.line.last().map(|(_, s)| *s).unwrap_or_default())
   }
 }
 
@@ -299,7 +287,7 @@ impl TreeEntry {
           })
           .collect()
       })
-      .unwrap_or(vec![]);
+      .unwrap_or_default();
     self.children.sort_by(|a, b| a.path.cmp(&b.path));
     self.children.sort_by(|a, b| b.is_dir.cmp(&a.is_dir));
   }
@@ -314,12 +302,12 @@ impl TreeEntry {
         .path
         .file_name()
         .and_then(|s| s.to_str())
-        .map(|x| x.starts_with("."))
+        .map(|x| x.starts_with('.'))
         .unwrap_or(false);
     if hidden {
       return false;
     }
-    return true;
+    true
   }
 
   // https://www.nerdfonts.com/cheat-sheet
@@ -373,7 +361,7 @@ impl TreeEntry {
         path: self.path.clone(),
         line: vec![
           (prefix, conf.icon_style),
-          ("  ".to_string() + name, mainstyle),
+          (" ".to_string() + name, mainstyle),
         ],
         level,
       }

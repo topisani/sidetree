@@ -26,7 +26,7 @@ fn conf_tree(ast: &syn::DeriveInput) -> syn::Result<TokenStream> {
     .map(|f| {
       f.ident
         .as_ref()
-        .ok_or(syn::Error::new(f.span(), "Expected field name"))
+        .ok_or_else(|| syn::Error::new(f.span(), "Expected field name"))
     })
     .collect::<syn::Result<Vec<_>>>()?;
 
@@ -37,14 +37,14 @@ fn conf_tree(ast: &syn::DeriveInput) -> syn::Result<TokenStream> {
 
   Ok(quote! {
     impl #impl_generics crate::config::ConfTree for #name #ty_generics #where_clause {
-    
+
       fn get_child(&self, name: &str) -> Result<&dyn crate::config::ConfOpt, String> {
         match name {
           #(#field_strs => Ok(&self.#field_names),)*
           _ => Err(format!("unknown option {}", name)),
         }
       }
-      
+
       fn get_child_mut(&mut self, name: &str) -> Result<&mut dyn crate::config::ConfOpt, String> {
         match name {
           #(#field_strs => Ok(&mut self.#field_names),)*

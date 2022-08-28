@@ -112,7 +112,7 @@ mod cmd_parser {
     if c == ';' {
       return false;
     }
-    return true;
+    true
   }
   
   fn arg<Input: Stream<Token = char>>() -> impl Parser<Input, Output = String> {

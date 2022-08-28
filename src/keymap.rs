@@ -1,7 +1,7 @@
 use crate::Command;
 use combine::parser::char::char;
-use combine::parser::char::string;
 use combine::parser::char::letter;
+use combine::parser::char::string;
 use combine::*;
 use std::collections::HashMap;
 use termion::event::Key;
@@ -26,43 +26,47 @@ impl KeyMap {
   }
 }
 
-pub fn parse_key<'a>(input: &'a str) -> Result<Key, easy::ParseError<&'a str>> {
-  let char_key = || many1(none_of(">".chars())).and_then(|word: String| match word.as_str() {
-    "return" => Ok('\n'),
-    "ret" => Ok('\n'),
-    "semicolon" => Ok(';'),
-    "gt" => Ok('>'),
-    "lt" => Ok('<'),
-    "percent" => Ok('%'),
-    "space" => Ok(' '),
-    "tab" => Ok('\t'),
-    c if c.len() == 1 => Ok(c.chars().next().unwrap()),
-    &_ => Err(error::UnexpectedParse::Unexpected)
-  });
+pub fn parse_key(input: &str) -> Result<Key, easy::ParseError<&str>> {
+  let char_key = || {
+    many1(none_of(">".chars())).and_then(|word: String| match word.as_str() {
+      "return" => Ok('\n'),
+      "ret" => Ok('\n'),
+      "semicolon" => Ok(';'),
+      "gt" => Ok('>'),
+      "lt" => Ok('<'),
+      "percent" => Ok('%'),
+      "space" => Ok(' '),
+      "tab" => Ok('\t'),
+      c if c.len() == 1 => Ok(c.chars().next().unwrap()),
+      &_ => Err(error::UnexpectedParse::Unexpected),
+    })
+  };
   let modifier = || {
     optional(choice!(
-      attempt(string("a-").map(|_| -> fn(char) -> Key { |c| Key::Alt(c) })),
-      attempt(string("c-").map(|_| -> fn(char) -> Key { |c| Key::Ctrl(c) }))
+      attempt(string("a-").map(|_| -> fn(char) -> Key { Key::Alt })),
+      attempt(string("c-").map(|_| -> fn(char) -> Key { Key::Ctrl }))
     ))
-    .map(|x| x.unwrap_or(|c| Key::Char(c)))
+    .map(|x| x.unwrap_or(Key::Char))
   };
-  let non_mod = || many1(letter()).and_then(|word: String| match word.as_str() {
-    "esc" => Ok(Key::Esc),
-    "backtab" => Ok(Key::BackTab),
-    "backspace" => Ok(Key::Backspace),
-    "del" => Ok(Key::Delete),
-    "home" => Ok(Key::Home),
-    "end" => Ok(Key::End),
-    "up" => Ok(Key::Up),
-    "down" => Ok(Key::Down),
-    "left" => Ok(Key::Left),
-    "right" => Ok(Key::Right),
-    "insert" => Ok(Key::Insert),
-    "pageup" => Ok(Key::PageUp),
-    "pagedown" => Ok(Key::PageDown),
-    &_ => Err(error::UnexpectedParse::Unexpected)
-  });
-  let short = || char_key().map(|c| Key::Char(c));
+  let non_mod = || {
+    many1(letter()).and_then(|word: String| match word.as_str() {
+      "esc" => Ok(Key::Esc),
+      "backtab" => Ok(Key::BackTab),
+      "backspace" => Ok(Key::Backspace),
+      "del" => Ok(Key::Delete),
+      "home" => Ok(Key::Home),
+      "end" => Ok(Key::End),
+      "up" => Ok(Key::Up),
+      "down" => Ok(Key::Down),
+      "left" => Ok(Key::Left),
+      "right" => Ok(Key::Right),
+      "insert" => Ok(Key::Insert),
+      "pageup" => Ok(Key::PageUp),
+      "pagedown" => Ok(Key::PageDown),
+      &_ => Err(error::UnexpectedParse::Unexpected),
+    })
+  };
+  let short = || char_key().map(Key::Char);
   let long = || {
     between(
       char('<'),
@@ -78,7 +82,7 @@ pub fn parse_key<'a>(input: &'a str) -> Result<Key, easy::ParseError<&'a str>> {
 #[cfg(test)]
 mod tests {
   use crate::keymap::parse_key;
-  use combine::Parser;
+
   use termion::event::Key;
 
   #[test]
