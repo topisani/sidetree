@@ -15,16 +15,16 @@ use termion::event::{Key, MouseEvent};
 use tui::layout::{Constraint, Direction, Layout};
 use tui::Frame;
 
-pub struct App {
+pub struct App<'a> {
   pub config: Config,
   pub tree: FileTreeState,
   pub exit: bool,
-  pub statusline: StatusLine,
+  pub statusline: StatusLine<'a>,
   pub keymap: KeyMap,
 }
 
-impl App {
-  pub fn new(cache: Cache) -> App {
+impl<'a> App<'a> {
+  pub fn new(cache: Cache) -> App<'a> {
     let mut res = App {
       config: Config::default(),
       tree: FileTreeState::new(PathBuf::from(".")),
@@ -38,7 +38,7 @@ impl App {
   }
 }
 
-impl App {
+impl<'a> App<'a> {
   pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>) {
     let chunks = Layout::default()
       .direction(Direction::Vertical)
@@ -266,21 +266,27 @@ impl App {
   }
 }
 
-pub struct ShellPrompt {}
+pub struct ShellPrompt { }
 
 impl Prompt for ShellPrompt {
   fn prompt_text(&self) -> &str {
     "!"
   }
   fn on_submit(&mut self, text: &str) -> Option<Command> {
+    
     Some(Command::Shell(text.to_string()))
   }
   fn on_cancel(&mut self) -> Option<Command> {
     None
   }
+
+  fn on_complete(&mut self, input: &str) -> Vec<String> {
+    Vec::new()
+  }
 }
 
-pub struct CmdPrompt {}
+pub struct CmdPrompt {
+}
 
 impl Prompt for CmdPrompt {
   fn prompt_text(&self) -> &str {
@@ -291,5 +297,8 @@ impl Prompt for CmdPrompt {
   }
   fn on_cancel(&mut self) -> Option<Command> {
     None
+  }
+  fn on_complete(&mut self, input: &str) -> Vec<String> {
+    Vec::new()
   }
 }

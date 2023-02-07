@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::commands::Command;
 use termion::event::Key;
 use tui::backend::Backend;
@@ -6,62 +8,90 @@ use tui::text::Span;
 use tui::text::Spans;
 use tui::widgets::Paragraph;
 use tui::Frame;
-use unicode_width::UnicodeWidthStr;
+use tui_textarea::CursorMove;
+use tui_textarea::TextArea;
 
 pub trait Prompt {
   fn prompt_text(&self) -> &str;
   fn on_submit(&mut self, input: &str) -> Option<Command>;
   fn on_cancel(&mut self) -> Option<Command>;
+  fn on_complete(&mut self, input: &str) -> Vec<String>;
 }
 
-struct PromptState {
+struct PromptState<'a> {
   pub prompt: Box<dyn Prompt>,
-  input: String,
+  textarea: TextArea<'a>,
+  history: Vec<String>,
+  hist_index: usize,
 }
 
-impl PromptState {
-  pub fn new(prompt: Box<dyn Prompt>) -> PromptState {
+impl<'a> PromptState<'a> {
+  pub fn new(prompt: Box<dyn Prompt>, mut history: Vec<String>) -> Self {
+    history.insert(0, String::new());
     PromptState {
       prompt,
-      input: String::new(),
+      textarea: TextArea::default(),
+      history,
+      hist_index: 0,
     }
   }
   /// Returns true if the prompt should be exited
   pub fn on_key(&mut self, key: Key) -> (bool, Option<Command>) {
     match key {
       Key::Char('\n') => (true, self.submit()),
-      Key::Char(c) => {
-        self.input.push(c);
+      Key::Up => {
+        self.walk_history(1);
         (false, None)
       }
-      Key::Backspace => {
-        self.input.pop();
+      Key::Down => {
+        self.walk_history(-1);
         (false, None)
       }
       Key::Esc => (true, self.cancel()),
-      _ => (false, None),
+      input => {
+        self.textarea.input(input);
+        self.history[0] = self.textarea.lines()[0].clone();
+        (false, None)
+      }
     }
   }
 
+  fn walk_history(&mut self, i: isize) {
+    self.hist_index = self.hist_index.saturating_add_signed(i);
+    self.hist_index = self.hist_index.clamp(0, self.history.len() - 1);
+    self.textarea = TextArea::new(vec![self.history[self.hist_index].clone()]);
+    self.textarea.move_cursor(CursorMove::End);
+  }
+
   pub fn submit(&mut self) -> Option<Command> {
-    let cmd = self.prompt.on_submit(self.input.as_str());
-    self.input.clear();
+    let cmd = self.prompt.on_submit(self.textarea.lines()[0].as_str());
+    self.history[0] = self.textarea.lines()[0].clone();
+    self.textarea = TextArea::default();
     cmd
   }
   pub fn cancel(&mut self) -> Option<Command> {
     let cmd = self.prompt.on_cancel();
-    self.input.clear();
+    self.history.remove(0);
+    self.textarea = TextArea::default();
     cmd
   }
 
   pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect) {
-    let text = vec![Spans::from(vec![
-      Span::raw(self.prompt.prompt_text()),
-      Span::raw(self.input.as_str()),
-    ])];
+    let widget = self.textarea.widget();
+    let prompt = self.prompt.prompt_text();
+    let text = vec![Spans::from(vec![Span::raw(prompt)])];
     let input = Paragraph::new(text);
-    f.render_widget(input, rect);
-    f.set_cursor(rect.x + self.input.width() as u16 + 1, rect.y);
+    let area1 = Rect {
+      width: prompt.len() as u16,
+      ..rect
+    };
+    let area2 = Rect {
+      x: rect.x + prompt.len() as u16,
+      width: rect.width - prompt.len() as u16,
+      ..rect
+    };
+    f.render_widget(input, area1);
+    f.render_widget(widget, area2);
   }
 }
 
@@ -86,14 +116,16 @@ impl InfoBox {
   }
 }
 
-pub struct StatusLine {
-  prompt_state: Option<PromptState>,
+pub struct StatusLine<'a> {
+  histories: HashMap<String, Vec<String>>,
+  prompt_state: Option<PromptState<'a>>,
   pub info: InfoBox,
 }
 
-impl StatusLine {
-  pub fn new() -> StatusLine {
+impl<'a> StatusLine<'a> {
+  pub fn new() -> StatusLine<'a> {
     StatusLine {
+      histories: Default::default(),
       prompt_state: None,
       info: InfoBox::new(),
     }
@@ -109,7 +141,12 @@ impl StatusLine {
     if let Some(p) = &mut self.prompt_state {
       let (exit, cmd) = p.on_key(key);
       if exit {
-        self.prompt_state = None;
+        let p = self.prompt_state.take().unwrap();
+        let mut hist = p.history;
+        hist.dedup();
+        self
+          .histories
+          .insert(p.prompt.prompt_text().into(), hist);
       }
       return (exit, cmd);
     }
@@ -118,7 +155,11 @@ impl StatusLine {
 
   pub fn prompt(&mut self, prompt: Box<dyn Prompt>) {
     self.info.clear();
-    self.prompt_state = Some(PromptState::new(prompt));
+    let hist = self
+      .histories
+      .remove(prompt.prompt_text())
+      .unwrap_or_default();
+    self.prompt_state = Some(PromptState::new(prompt, hist));
   }
 
   pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect) {

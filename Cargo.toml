@@ -21,6 +21,7 @@ toml = "0.5.9"
 syn = "1.0.99"
 quote = "1.0.21"
 proc-macro2 = "1.0.43"
+tui-textarea = { version = "0.2.0", default-features = false, features = ["termion"] }
 
 # https://stackoverflow.com/questions/65813638/how-to-use-proc-macro-in-normal-module
 [lib]
