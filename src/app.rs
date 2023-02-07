@@ -71,6 +71,9 @@ impl<'a> App<'a> {
   }
 
   pub fn on_mouse(&mut self, me: MouseEvent) -> Option<()> {
+    if self.statusline.has_focus() {
+      return Some(());
+    }
     if let MouseEvent::Press(button, _x, y) = me {
       match button {
         MouseButton::Left | MouseButton::Right => {
@@ -215,6 +218,71 @@ impl<'a> App<'a> {
       MapKey(key, cmd) => {
         self.keymap.add_mapping(*key, (**cmd).clone());
       }
+      Rename(name) => {
+        if let Some(name) = name {
+          let src = &self.tree.entry().path;
+          let mut dst = src.clone();
+          dst.set_file_name(name);
+          // TODO: Error handling
+          if !dst.exists() {
+            std::fs::rename(src, dst).unwrap();
+          }
+        } else {
+          self.statusline.prompt(Box::new(RenamePrompt {
+            old_name: self
+              .tree
+              .entry()
+              .path
+              .file_name()
+              .unwrap()
+              .to_string_lossy()
+              .into(),
+          }));
+        }
+      }
+      NewFile(name) => {
+        if let Some(name) = name {
+          let mut path = self.tree.current_dir();
+          path.push(name);
+          // TODO: Error handling
+          if !path.exists() {
+            if name.ends_with('/') {
+              std::fs::create_dir_all(path).unwrap();
+            } else {
+              std::fs::write(path, "").unwrap();
+            }
+          }
+        } else {
+          self.statusline.prompt(Box::new(NewFilePrompt {}));
+        }
+      }
+      NewDir(name) => {
+        if let Some(name) = name {
+          let mut path = self.tree.current_dir();
+          path.push(name);
+          // TODO: Error handling
+          if !path.exists() {
+            std::fs::create_dir_all(path).unwrap();
+          }
+        } else {
+          self.statusline.prompt(Box::new(NewDirPrompt {}));
+        }
+      }
+
+      Delete { prompt } => {
+        if !prompt {
+          let path = &self.tree.entry().path;
+          // TODO: Error handling
+          if path.is_dir() {
+            // use remove_all?
+            std::fs::remove_dir(path).unwrap();
+          } else {
+            std::fs::remove_file(path).unwrap();
+          }
+        } else {
+          self.statusline.prompt(Box::new(DeletePrompt {}));
+        }
+      }
     }
     self.update();
   }
@@ -266,27 +334,21 @@ impl<'a> App<'a> {
   }
 }
 
-pub struct ShellPrompt { }
+pub struct ShellPrompt {}
 
 impl Prompt for ShellPrompt {
   fn prompt_text(&self) -> &str {
     "!"
   }
   fn on_submit(&mut self, text: &str) -> Option<Command> {
-    
     Some(Command::Shell(text.to_string()))
   }
   fn on_cancel(&mut self) -> Option<Command> {
     None
   }
-
-  fn on_complete(&mut self, input: &str) -> Vec<String> {
-    Vec::new()
-  }
 }
 
-pub struct CmdPrompt {
-}
+pub struct CmdPrompt {}
 
 impl Prompt for CmdPrompt {
   fn prompt_text(&self) -> &str {
@@ -295,10 +357,62 @@ impl Prompt for CmdPrompt {
   fn on_submit(&mut self, text: &str) -> Option<Command> {
     Some(Command::CmdStr(text.to_string()))
   }
-  fn on_cancel(&mut self) -> Option<Command> {
-    None
+}
+
+pub struct RenamePrompt {
+  old_name: String,
+}
+
+impl Prompt for RenamePrompt {
+  fn prompt_text(&self) -> &str {
+    "Rename>"
   }
-  fn on_complete(&mut self, input: &str) -> Vec<String> {
-    Vec::new()
+
+  fn on_submit(&mut self, input: &str) -> Option<Command> {
+    Some(Command::Rename(Some(input.into())))
+  }
+
+  fn init_text(&self) -> String {
+    self.old_name.clone()
+  }
+}
+
+pub struct NewFilePrompt {}
+
+impl Prompt for NewFilePrompt {
+  fn prompt_text(&self) -> &str {
+    "mk>"
+  }
+
+  fn on_submit(&mut self, input: &str) -> Option<Command> {
+    Some(Command::NewFile(Some(input.into())))
+  }
+}
+
+pub struct NewDirPrompt {}
+
+impl Prompt for NewDirPrompt {
+  fn prompt_text(&self) -> &str {
+    "New dir>"
+  }
+
+  fn on_submit(&mut self, input: &str) -> Option<Command> {
+    Some(Command::NewDir(Some(input.into())))
+  }
+}
+
+pub struct DeletePrompt {}
+
+impl Prompt for DeletePrompt {
+  fn prompt_text(&self) -> &str {
+    "delete? [y/N]>"
+  }
+
+  fn on_submit(&mut self, input: &str) -> Option<Command> {
+    if input == "y" || input == "Y" {
+      Some(Command::Delete { prompt: false })
+    } else {
+      None
+    }
   }
 }

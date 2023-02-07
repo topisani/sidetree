@@ -32,8 +32,3 @@ proc-macro = true
 [[bin]]
 name = "sidetree"
 path = "src/main.rs"
-
-[package.metadata.release]
-dev-version-ext = "dev"
-pre-release-commit-message = "release {{version}}"
-post-release-commit-message = "Released {{version}}, starting {{next_version}}"

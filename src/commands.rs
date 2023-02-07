@@ -26,6 +26,10 @@ pub enum Command {
   Set(String, String),
   Cd(Option<PathBuf>),
   MapKey(Key, Box<Command>),
+  Rename(Option<String>),
+  NewFile(Option<String>),
+  NewDir(Option<String>),
+  Delete { prompt: bool },
   // NamedCmd(String, Vec<String>)
 }
 
@@ -43,6 +47,10 @@ pub fn build_cmd(cmd: String, args: Vec<String>) -> Result<Command, String> {
       parse_key(args[0].as_str()).map_err(|_| "could not parse key")?,
       Box::new(build_cmd(args[1].clone(), args[2..].to_vec())?),
     )),
+    "rename" => Ok(Command::Rename(args.get(0).cloned())),
+    "mkfile" => Ok(Command::NewFile(args.get(0).cloned())),
+    "mk" => Ok(Command::NewFile(args.get(0).cloned())),
+    "rm" => Ok(Command::Delete { prompt: true }),
     _ => Err(format!("unknown command {}", cmd)),
   }
 }
@@ -114,7 +122,7 @@ mod cmd_parser {
     }
     true
   }
-  
+
   fn arg<Input: Stream<Token = char>>() -> impl Parser<Input, Output = String> {
     let double_quotes = || between(char('"'), lex(char('"')), many(cmd_str_char('"')));
     let single_quotes = || between(char('\''), lex(char('\'')), many(cmd_str_char('\'')));

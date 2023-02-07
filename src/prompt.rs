@@ -14,8 +14,15 @@ use tui_textarea::TextArea;
 pub trait Prompt {
   fn prompt_text(&self) -> &str;
   fn on_submit(&mut self, input: &str) -> Option<Command>;
-  fn on_cancel(&mut self) -> Option<Command>;
-  fn on_complete(&mut self, input: &str) -> Vec<String>;
+  fn on_cancel(&mut self) -> Option<Command> {
+    None
+  }
+  fn on_complete(&mut self, input: &str) -> Vec<String> {
+    Vec::new()
+  }
+  fn init_text(&self) -> String {
+    String::new()
+  }
 }
 
 struct PromptState<'a> {
@@ -28,9 +35,11 @@ struct PromptState<'a> {
 impl<'a> PromptState<'a> {
   pub fn new(prompt: Box<dyn Prompt>, mut history: Vec<String>) -> Self {
     history.insert(0, String::new());
+    let mut textarea = TextArea::new(vec![prompt.init_text()]);
+    textarea.move_cursor(CursorMove::End);
     PromptState {
+      textarea,
       prompt,
-      textarea: TextArea::default(),
       history,
       hist_index: 0,
     }
@@ -69,6 +78,7 @@ impl<'a> PromptState<'a> {
     self.textarea = TextArea::default();
     cmd
   }
+  
   pub fn cancel(&mut self) -> Option<Command> {
     let cmd = self.prompt.on_cancel();
     self.history.remove(0);
@@ -144,9 +154,7 @@ impl<'a> StatusLine<'a> {
         let p = self.prompt_state.take().unwrap();
         let mut hist = p.history;
         hist.dedup();
-        self
-          .histories
-          .insert(p.prompt.prompt_text().into(), hist);
+        self.histories.insert(p.prompt.prompt_text().into(), hist);
       }
       return (exit, cmd);
     }
@@ -170,5 +178,14 @@ impl<'a> StatusLine<'a> {
       let input = Paragraph::new(text);
       f.render_widget(input, rect);
     }
+  }
+  
+  pub fn cancel_prompt(&mut self) -> Option<Command> {
+    if let Some(p) = &mut self.prompt_state {
+      let res = p.cancel();
+      self.prompt_state = None;
+      return res
+    }
+    None
   }
 }

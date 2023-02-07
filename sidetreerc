@@ -22,6 +22,9 @@ set link_style cyan+b
 map <c-c> quit
 map H cd ..
 map L cd
+map o mk
+map c rename
+map d rm
 
 # Example Integrations ─────────────────────────────────────────────────────────
 
