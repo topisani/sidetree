@@ -274,8 +274,7 @@ impl<'a> App<'a> {
           let path = &self.tree.entry().path;
           // TODO: Error handling
           if path.is_dir() {
-            // use remove_all?
-            std::fs::remove_dir(path).unwrap();
+            std::fs::remove_dir_all(path).unwrap();
           } else {
             std::fs::remove_file(path).unwrap();
           }
